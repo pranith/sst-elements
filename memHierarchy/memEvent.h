@@ -146,6 +146,8 @@ public:
     static const uint32_t F_LOCKED        = 0x00000001;  /* Used in a Read-Lock, Write-Unlock atomicity scheme */
     static const uint32_t F_NONCACHEABLE  = 0x00000010;  /* Used to specify that this memory event should not be cached */
     static const uint32_t F_LLSC          = 0x00000100;  /* Load Link / Store Conditional */
+    static const uint32_t F_LLSC_RESP     = 0x00001000;  /* Load Link / Store Conditional */
+    static const uint32_t F_PREF          = 0x00010000;  /* Prefetch Request */
 
     typedef std::vector<uint8_t> dataVec;       /** Data Payload type */
 

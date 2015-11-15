@@ -91,6 +91,10 @@ MemEvent* MemHierarchyInterface::createMemEvent(SimpleMem::Request *_req) const{
             me->setStoreConditional();
     }
 
+    if(_req->flags & SimpleMem::Request::F_PREF) {
+        me->setPrefetchFlag(true);
+    }
+
     me->setVirtualAddress(_req->getVirtualAddress());
     me->setInstructionPointer(_req->getInstructionPointer());
 
