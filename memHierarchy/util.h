@@ -78,7 +78,8 @@ struct CtrlStats{
                 GetX_M,
                 GetSE_IM,
                 GetSE_SM,
-                GetSE_M;
+                GetSE_M,
+                newPrefReqs_;
     CtrlStats(){
         initialize();
     }
@@ -89,6 +90,7 @@ struct CtrlStats{
         newReqGetXHits_ = newReqGetXMisses_ = blockedReqGetXHits_ = blockedReqGetXMisses_ = 0;
         newReqGetSExHits_ = newReqGetSExMisses_ = blockedReqGetSExHits_ = blockedReqGetSExMisses_ = 0;
         GetS_IS = GetS_M = GetX_IM = GetX_SM = GetX_M = GetSE_IM = GetSE_SM = GetSE_M = 0;
+        newPrefReqs_ = 0;
     }
 };
 

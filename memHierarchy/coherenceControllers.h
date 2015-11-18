@@ -695,7 +695,8 @@ protected:
                 FetchInvReqSent_,
                 FetchInvXReqSent_,
                 NACKsSentDown_,
-                NACKsSentUp_;
+                NACKsSentUp_,
+                PrefReqsReceived_;
         
         Stats(){
             initialize();
@@ -709,6 +710,7 @@ protected:
             GetSExReqsReceived_ = GetSReqsReceived_ = GetXReqsReceived_ = 0;
             NACKsSentDown_ = NACKsSentUp_ = 0;
             FetchInvReqSent_ = FetchInvXReqSent_ = 0;
+            PrefReqsReceived_ = 0;
         }
     }; // end Stats struct
 

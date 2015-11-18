@@ -162,6 +162,7 @@ static const ElementInfoStatistic cache_statistics[] = {
     {"FetchInvX_recv",          "Event received: FetchInvX", "count", 1},
     {"Inv_recv",                "Event received: Inv", "count", 1},
     {"NACK_recv",               "Event: NACK received", "count", 1},
+    {"Pref_recv",               "Event received: Prefetch", "count", 1},
     /* Event sends */
     {"PutM_Sent_Evict",         "Event: PutM sent due to eviction", "count", 1},
     {"PutS_Sent_Evict",         "Event: PutS sent due to eviction", "count", 1},

@@ -79,6 +79,10 @@ void Cache::profileEvent(MemEvent* event, Command cmd, bool replay, bool canStal
             default:
                 return;
         }
+        if (event->isPrefetch()) {
+          statPref_recv->addData(1);
+          stats_[0].newPrefReqs_++;
+        }
     }
     if (cmd != GetS && cmd != GetX && cmd != GetSEx) return;
 

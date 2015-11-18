@@ -355,6 +355,7 @@ private:
     Statistic<uint64_t>* statFetchInvX_recv;
     Statistic<uint64_t>* statInv_recv;
     Statistic<uint64_t>* statNACK_recv;
+    Statistic<uint64_t>* statPref_recv;
 #ifdef USE_VAULTSIM_HMC
     Statistic<uint64_t>* statCacheHits_hmc;
     Statistic<uint64_t>* statCacheHits_nonhmc;
