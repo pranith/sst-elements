@@ -797,6 +797,8 @@ void L1CoherenceController::printStatsForMacSim(int statLocation, vector<int> gr
         writeTo(ofs, name_, string("NACKs_sent_(MSHR_Full,Down)"),                 stats_[groupIds[i]].NACKsSentDown_);
         writeTo(ofs, name_, string("NACKs_sent_(MSHR_Full,Up)"),                   stats_[groupIds[i]].NACKsSentUp_);
 
+        writeTo(ofs, name_, string("Pref_Requests_received"),  ctrlStats[groupIds[i]].newPrefReqs_);
+
         // Latency stats
         writeTo(ofs, name_, string("Avg_Miss_Latency_(cyc)"), upgradeLatency);
         if (ctrlStats[groupIds[0]].GetS_IS  > 0) writeTo(ofs, name_, string("Latency_GetS_I->S"),   (lat_GetS_IS / ctrlStats[groupIds[0]].GetS_IS));
