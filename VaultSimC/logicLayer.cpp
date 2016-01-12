@@ -76,12 +76,6 @@ logicLayer::logicLayer(ComponentId_t id, Params& params) : IntrospectedComponent
         toMem = NULL;
     dbg.debug(_INFO_, "Made LogicLayer %d toMem:%p toCPU:%p\n", llID, toMem, toCPU);
 
-    bankMappingScheme = 0;
-    #ifdef USE_VAULTSIM_HMC
-        bankMappingScheme = params.find_integer("bank_MappingScheme", 0);
-        out.output("*LogicLayer%d: bankMappingScheme %d\n", ident, bankMappingScheme);
-    #endif
-
     // etc
     std::string frequency;
     frequency = params.find_string("clock", "2.2 Ghz");
