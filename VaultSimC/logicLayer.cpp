@@ -76,6 +76,15 @@ logicLayer::logicLayer(ComponentId_t id, Params& params) : IntrospectedComponent
         toMem = NULL;
     dbg.debug(_INFO_, "Made LogicLayer %d toMem:%p toCPU:%p\n", llID, toMem, toCPU);
 
+
+    numDramBanksPerRank = 1;
+    #ifdef USE_VAULTSIM_HMC
+        numDramBanksPerRank = params.find_integer("num_dram_banks_per_rank", 1);
+        out.output("*LogicLayer%u: numDramBanksPerRank %d\n", ident, numDramBanksPerRank);
+        if (numDramBanksPerRank < 0)
+            dbg.fatal(CALL_INFO, -1, "numDramBanksPerRank should be bigger than 0.\n");
+    #endif
+
     // etc
     std::string frequency;
     frequency = params.find_string("clock", "2.2 Ghz");
