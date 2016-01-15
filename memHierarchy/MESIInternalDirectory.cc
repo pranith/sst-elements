@@ -1711,14 +1711,14 @@ void MESIInternalDirectory::printStatsForMacSim(int statLocation, vector<int> gr
         writeTo(ofs, name_, string("Miss_ratio"), 100 - hitRatio);
 
         // Coherence transitions for misses 
-        writeTo(ofs, name_, string("GetS_I->S"),                           ctrlStats[groupIds[i]].GetS_IS);
-        writeTo(ofs, name_, string("GetS_M(present_at_another_cache)"),    ctrlStats[groupIds[i]].GetS_M);
-        writeTo(ofs, name_, string("GetX_I->M"),                           ctrlStats[groupIds[i]].GetX_IM);
-        writeTo(ofs, name_, string("GetX_S->M"),                           ctrlStats[groupIds[i]].GetX_SM);
-        writeTo(ofs, name_, string("GetX_M(present_at_another_cache)"),    ctrlStats[groupIds[i]].GetX_M);
-        writeTo(ofs, name_, string("GetSEx_I->M"),                         ctrlStats[groupIds[i]].GetSE_IM);
-        writeTo(ofs, name_, string("GetSEx_S->M"),                         ctrlStats[groupIds[i]].GetSE_SM);
-        writeTo(ofs, name_, string("GetSEx_M(present_at_another_cache)"),  ctrlStats[groupIds[i]].GetSE_M);
+        writeTo(ofs, name_, string("GetS_I_to_S"),                           ctrlStats[groupIds[i]].GetS_IS);
+        writeTo(ofs, name_, string("GetS_M_present_at_another_cache"),    ctrlStats[groupIds[i]].GetS_M);
+        writeTo(ofs, name_, string("GetX_I_to_M"),                           ctrlStats[groupIds[i]].GetX_IM);
+        writeTo(ofs, name_, string("GetX_S_to_M"),                           ctrlStats[groupIds[i]].GetX_SM);
+        writeTo(ofs, name_, string("GetX_M_present_at_another_cache"),    ctrlStats[groupIds[i]].GetX_M);
+        writeTo(ofs, name_, string("GetSEx_I_to_M"),                         ctrlStats[groupIds[i]].GetSE_IM);
+        writeTo(ofs, name_, string("GetSEx_S_to_M"),                         ctrlStats[groupIds[i]].GetSE_SM);
+        writeTo(ofs, name_, string("GetSEx_M_present_at_another_cache"),  ctrlStats[groupIds[i]].GetSE_M);
 
         // Replacements and evictions
         writeTo(ofs, name_, string("PutS_received"),               stats_[groupIds[i]].PUTSReqsReceived_);
@@ -1729,20 +1729,20 @@ void MESIInternalDirectory::printStatsForMacSim(int statLocation, vector<int> gr
 
         // Other stats
         writeTo(ofs, name_, string("Inv_stalled_because_LOCK_held"),               ctrlStats[groupIds[i]].InvWaitingForUserLock_);
-        writeTo(ofs, name_, string("Requests_received_(incl_coherence_traffic)"),  ctrlStats[groupIds[i]].TotalRequestsReceived_);
-        writeTo(ofs, name_, string("Requests_handled_by_MSHR_(MSHR_hits)"),        ctrlStats[groupIds[i]].TotalMSHRHits_);
-        writeTo(ofs, name_, string("NACKs_sent_(MSHR_Full,Down)"),                 stats_[groupIds[i]].NACKsSentDown_);
-        writeTo(ofs, name_, string("NACKs_sent_(MSHR_Full,Up)"),                   stats_[groupIds[i]].NACKsSentUp_);
+        writeTo(ofs, name_, string("Requests_received_incl_coherence_traffic"),  ctrlStats[groupIds[i]].TotalRequestsReceived_);
+        writeTo(ofs, name_, string("Requests_handled_by_MSHR_MSHR_hits"),        ctrlStats[groupIds[i]].TotalMSHRHits_);
+        writeTo(ofs, name_, string("NACKs_sent_MSHR_Fulld_Down"),                 stats_[groupIds[i]].NACKsSentDown_);
+        writeTo(ofs, name_, string("NACKs_sent_MSHR_Full_Up"),                   stats_[groupIds[i]].NACKsSentUp_);
 
         // Latency stats
-        writeTo(ofs, name_, string("Avg_Miss_Latency_(cyc)"), upgradeLatency);
-        if (ctrlStats[groupIds[0]].GetS_IS  > 0) writeTo(ofs, name_, string("Latency_GetS_I->S"),   (lat_GetS_IS / ctrlStats[groupIds[0]].GetS_IS));
+        writeTo(ofs, name_, string("Avg_Miss_Latency_cyc"), upgradeLatency);
+        if (ctrlStats[groupIds[0]].GetS_IS  > 0) writeTo(ofs, name_, string("Latency_GetS_I_to_S"),   (lat_GetS_IS / ctrlStats[groupIds[0]].GetS_IS));
         if (ctrlStats[groupIds[0]].GetS_M   > 0) writeTo(ofs, name_, string("Latency_GetS_M"),      (lat_GetS_M / ctrlStats[groupIds[0]].GetS_M));
-        if (ctrlStats[groupIds[0]].GetX_IM  > 0) writeTo(ofs, name_, string("Latency_GetX_I->M"),   (lat_GetX_IM / ctrlStats[groupIds[0]].GetX_IM));
-        if (ctrlStats[groupIds[0]].GetX_SM  > 0) writeTo(ofs, name_, string("Latency_GetX_S->M"),   (lat_GetX_SM / ctrlStats[groupIds[0]].GetX_SM));
+        if (ctrlStats[groupIds[0]].GetX_IM  > 0) writeTo(ofs, name_, string("Latency_GetX_I_to_M"),   (lat_GetX_IM / ctrlStats[groupIds[0]].GetX_IM));
+        if (ctrlStats[groupIds[0]].GetX_SM  > 0) writeTo(ofs, name_, string("Latency_GetX_S_to_M"),   (lat_GetX_SM / ctrlStats[groupIds[0]].GetX_SM));
         if (ctrlStats[groupIds[0]].GetX_M   > 0) writeTo(ofs, name_, string("Latency_GetX_M"),      (lat_GetX_M / ctrlStats[groupIds[0]].GetX_M));
-        if (ctrlStats[groupIds[0]].GetSE_IM > 0) writeTo(ofs, name_, string("Latency_GetSEx_I->M"), (lat_GetSEx_IM / ctrlStats[groupIds[0]].GetSE_IM));
-        if (ctrlStats[groupIds[0]].GetSE_SM > 0) writeTo(ofs, name_, string("Latency_GetSEx_S->M"), (lat_GetSEx_SM / ctrlStats[groupIds[0]].GetSE_SM));
+        if (ctrlStats[groupIds[0]].GetSE_IM > 0) writeTo(ofs, name_, string("Latency_GetSEx_I_to_M"), (lat_GetSEx_IM / ctrlStats[groupIds[0]].GetSE_IM));
+        if (ctrlStats[groupIds[0]].GetSE_SM > 0) writeTo(ofs, name_, string("Latency_GetSEx_S_to_M"), (lat_GetSEx_SM / ctrlStats[groupIds[0]].GetSE_SM));
         if (ctrlStats[groupIds[0]].GetSE_M  > 0) writeTo(ofs, name_, string("Latency_GetSEx_M"),    (lat_GetSEx_M / ctrlStats[groupIds[0]].GetSE_M));
     }
 
