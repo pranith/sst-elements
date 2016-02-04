@@ -12,6 +12,8 @@ comp_LTLIBRARIES = libVaultSimC.la
 libVaultSimC_la_SOURCES = \
     logicLayer.h \
     logicLayer.cpp \
+    quad.h \
+    quad.cpp \
     VaultSimC.cpp \
     VaultSimC.h \
     Vault.cpp \

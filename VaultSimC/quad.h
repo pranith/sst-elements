@@ -10,8 +10,8 @@
 // distribution.
 
 
-#ifndef _LOGICLAYER_H
-#define _LOGICLAYER_H
+#ifndef _QUAD_H
+#define _QUAD_H
 
 #include <sst/core/event.h>
 #include <sst/core/introspectedComponent.h>
@@ -38,20 +38,16 @@
 using namespace std;
 using namespace SST;
 
-class logicLayer : public IntrospectedComponent {
+class quad : public IntrospectedComponent {
 private:
     typedef SST::Link memChan_t;
     typedef vector<memChan_t*> memChans_t;
-
-    #ifdef USE_VAULTSIM_HMC
-    typedef unordered_map<uint64_t, vector<MemHierarchy::MemEvent*> > tIdQueue_t;
-    #endif
 
 public:
     /** 
      * Constructor
      */
-    logicLayer(ComponentId_t id, Params& params);
+    quad(ComponentId_t id, Params& params);
 
     /**
      * finish
@@ -59,72 +55,24 @@ public:
      */
     void finish();
 
-private: 
+private:
     /** 
-     * Constructor
-     */
-    logicLayer(const logicLayer& c);
-
-    /** 
-     * Step call for LogicLayer
+     * Step call for quad
      */
     bool clock(Cycle_t);
 
-    // Determine if we 'own' a given address
-    inline bool isOurs(unsigned int addr);
-
-    /**
-     *  Stats
-     */
-    // Helper function for printing statistics in MacSim format
-    template<typename T>
-    void writeTo(ofstream &ofs, string prefix, string name, T count);
-    void printStatsForMacSim();
 
 private:
-    bool haveQuad;
+    int quadID;
     int numVaultPerQuad;
-    int numDramBanksPerRank;
-    int reqLimit;
-    int numVaults;
-    int numVaults2;
-
-    unsigned int llID;
 
     // SST Links
-    memChans_t outChans;                 // SST links to each Quad/Vault
-    SST::Link *toMem;
-    SST::Link *toCPU;
-    uint64_t sendAddressMask;
-    int sendAddressShift;
+    memChans_t vaultChans;
+    SST::Link *toLogicLayer;
 
     // cacheLineSize
     uint64_t CacheLineSize;             // it is used to determine VaultIDs
     unsigned CacheLineSizeLog2;         // bits of CacheLineSize
-
-    // Multi logicLayer support (FIXME)
-    unsigned int LL_MASK;
-
-    // Transaction Support
-    #ifdef USE_VAULTSIM_HMC
-    tIdQueue_t tIdQueue;
-    unordered_map<uint64_t, uint64_t> transSize;
-    queue<uint64_t> transReadyQueue;
-    queue<uint64_t> transRetireQueue;
-    set<uint64_t> transConflictQueue;
-    unsigned activeTransactionsLimit;       //FIXME: Not used now
-    tIdQueue_t tIdReadyForRetire;
-    unordered_set<uint64_t> activeTransactions;
-    #endif
-
-    // Statistics
-    Statistic<uint64_t>* memOpsProcessed;
-    Statistic<uint64_t>* HMCCandidateProcessed;
-    Statistic<uint64_t>* HMCOpsProcessed;
-    Statistic<uint64_t>* HMCTransOpsProcessed;
-    
-    Statistic<uint64_t>* reqUsedToCpu[2];
-    Statistic<uint64_t>* reqUsedToMem[2];
 
     // Output
     Output dbg;                 // Output, for printing debuging commands

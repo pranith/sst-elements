@@ -22,7 +22,7 @@ using namespace SST::MemHierarchy;
 
 logicLayer::logicLayer(ComponentId_t id, Params& params) : IntrospectedComponent( id )
 {
-    // Debug and Output Initializatio
+    // Debug and Output Initialization
     out.init("", 0, 0, Output::STDOUT);
 
     int debugLevel = params.find_integer("debug_level", 0);
@@ -45,28 +45,51 @@ logicLayer::logicLayer(ComponentId_t id, Params& params) : IntrospectedComponent
         dbg.fatal(CALL_INFO, -1, " LL_MASK not defined\n");
     LL_MASK = mask;
 
+    haveQuad = params.find_integer("have_quad", 0);
+
+    numVaultPerQuad = params.find_integer("num_vault_per_quad", 4);
+
     bool terminal = params.find_integer("terminal", 0);
+
+    CacheLineSize = params.find_integer("cacheLineSize", 64);
+    CacheLineSizeLog2 = log(CacheLineSize) / log(2);
 
     // VaultSims Initializations (Links)
     numVaults = params.find_integer("vaults", -1);
+    numVaults2 = log(numVaults) / log(2);
     if (-1 == numVaults) 
         dbg.fatal(CALL_INFO, -1, "numVaults not defined\n");
-    // connect our vaults
-    for (int i = 0; i < numVaults; ++i) {
+    // connect our quads/vaults
+    int numOfBus = numVaults;
+    sendAddressMask = (1LL << numVaults2) - 1;
+    sendAddressShift = CacheLineSizeLog2;
+    if (haveQuad) {
+        numOfBus = numVaults/numVaultPerQuad;
+        sendAddressMask = (1LL << numVaultPerQuad) - 1;
+        sendAddressShift = CacheLineSizeLog2 + numVaults2;
+    }
+
+    for (int i = 0; i < numOfBus; ++i) {
         char bus_name[50];
         snprintf(bus_name, 50, "bus_%d", i);
         memChan_t *chan = configureLink(bus_name);      //link delay is configurable by python scripts
         if (chan) {
-            memChans.push_back(chan);
+            outChans.push_back(chan);
             dbg.debug(_INFO_, "\tConnected %s\n", bus_name);
         }
         else
             dbg.fatal(CALL_INFO, -1, " could not find %s\n", bus_name);
     }
-    
-    out.output("*LogicLayer%d: Connected %d Vaults\n", ident, numVaults);
+
+    // Output to user
+    if (haveQuad)
+        out.output("*LogicLayer%d: Connected %d Quads\n", llID, numVaults/numVaultPerQuad);
+    else
+        out.output("*LogicLayer%d: Connected %d Vaults\n", llID, numVaults);
+        
+
     #ifdef USE_VAULTSIM_HMC
-    out.output("*LogicLayer%d: Flag USE_VAULTSIM_HMC set\n", ident);
+    out.output("*LogicLayer%d: Flag USE_VAULTSIM_HMC set\n", llID);
     #endif
 
     // Connect Chain (cpu and other LL links (FIXME:multiple logiclayer support)
@@ -87,14 +110,11 @@ logicLayer::logicLayer(ComponentId_t id, Params& params) : IntrospectedComponent
             dbg.fatal(CALL_INFO, -1, "numDramBanksPerRank should be bigger than 0.\n");
     #endif
 
-    // etc
+    // clock
     std::string frequency;
-    frequency = params.find_string("clock", "2.2 Ghz");
+    frequency = params.find_string("clock", "2.0 Ghz");
     registerClock(frequency, new Clock::Handler<logicLayer>(this, &logicLayer::clock));
     dbg.debug(_INFO_, "Making LogicLayer with id=%d & clock=%s\n", llID, frequency.c_str());
-
-    CacheLineSize = params.find_integer("cacheLineSize", 64);
-    CacheLineSizeLog2 = log(CacheLineSize) / log(2);
 
     // Stats Initialization
     statsFormat = params.find_integer("statistics_format", 0);
@@ -152,9 +172,9 @@ bool logicLayer::clock(Cycle_t currentCycle)
 
         // (Multi LogicLayer) Check if it is for this LogicLayer
         if (isOurs(event->getAddr())) {
-            unsigned int vaultID = (event->getAddr() >> CacheLineSizeLog2) % memChans.size();
-            memChans[vaultID]->send(event);
-            dbg.debug(_L4_, "LogicLayer%d sends %p to vault%u @ %" PRIu64 "\n", llID, (void*)event->getAddr(), vaultID, currentCycle);
+            unsigned int sendID = ((event->getAddr()+65) >>  sendAddressShift) & sendAddressMask;
+            outChans[sendID]->send(event);
+            dbg.debug(_L4_, "LogicLayer%d sends %p to quad/vault%u @ %" PRIu64 "\n", llID, (void*)event->getAddr(), sendID, currentCycle);
         } 
         // This event is not for this LogicLayer
         else {
@@ -188,12 +208,12 @@ bool logicLayer::clock(Cycle_t currentCycle)
     }
 
     // 3)
-    /* Check For Events From Vaults 
+    /* Check For Events From Quads
      *     and send them to CPU
      *     Transaction Support: save all transaction until we know what to do with them (dump or restart)
      **/
     unsigned j = 0;
-    for (memChans_t::iterator it = memChans.begin(); it != memChans.end(); ++it, ++j) {
+    for (memChans_t::iterator it = outChans.begin(); it != outChans.end(); ++it, ++j) {
         memChan_t *m_memChan = *it;
         while ((ev = m_memChan->recv())) {
             MemEvent *event  = dynamic_cast<MemEvent*>(ev);
