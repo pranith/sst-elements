@@ -33,16 +33,16 @@ logicLayer::logicLayer(ComponentId_t id, Params& params) : IntrospectedComponent
     // logicLayer Params Initialization
     int ident = params.find_integer("llID", -1);
     if (-1 == ident)
-        dbg.fatal(CALL_INFO, -1, "no llID defined\n");
+        dbg.fatal(CALL_INFO, -1, "llID not defined\n");
     llID = ident;
 
     reqLimit = params.find_integer("req_LimitPerCycle", -1);
     if (-1 == reqLimit)  
-        dbg.fatal(CALL_INFO, -1, " no req_LimitPerCycle param defined for logiclayer\n");
+        dbg.fatal(CALL_INFO, -1, " req_LimitPerCycle not defined\n");
 
     int mask = params.find_integer("LL_MASK", -1);
     if (-1 == mask) 
-        dbg.fatal(CALL_INFO, -1, " no LL_MASK param defined for logiclayer\n");
+        dbg.fatal(CALL_INFO, -1, " LL_MASK not defined\n");
     LL_MASK = mask;
 
     bool terminal = params.find_integer("terminal", 0);
@@ -50,7 +50,7 @@ logicLayer::logicLayer(ComponentId_t id, Params& params) : IntrospectedComponent
     // VaultSims Initializations (Links)
     numVaults = params.find_integer("vaults", -1);
     if (-1 == numVaults) 
-        dbg.fatal(CALL_INFO, -1, " no vaults param defined for LogicLayer\n");
+        dbg.fatal(CALL_INFO, -1, " no numVaults defined\n");
     // connect up our vaults
     for (int i = 0; i < numVaults; ++i) {
         char bus_name[50];
