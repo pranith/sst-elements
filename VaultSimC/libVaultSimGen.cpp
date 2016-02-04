@@ -26,7 +26,14 @@ const char *memEventList[] = {
   NULL
 };
 
-// Logiclayer
+// ------------------------------------------------------- Logiclayer -------------------------------------------------------------//
+static const ElementInfoPort logicLayer_ports[] = {
+  {"bus_%(vaults)d", "Link to the individual memory vaults", memEventList},
+  {"toCPU", "Connection towards the processor (directly to the proessor, or down the chain in the direction of the processor)", memEventList},    
+  {"toMem", "If 'terminal' is 0 (i.e. this is not the last cube in the chain) then this port connects to the next cube.", memEventList},
+  {NULL, NULL, NULL}
+};
+
 static const ElementInfoStatistic logicLayer_statistics[] = {
   { "Total_memory_ops_processed", "Total memory ops processed", "reqs", 1},
   { "HMC_ops_processed", "Total HMC ops processed", "reqs", 1},
@@ -40,28 +47,21 @@ static const ElementInfoStatistic logicLayer_statistics[] = {
 };
 
 static const ElementInfoParam logicLayer_params[] = {
-  {"clock",              "Logic Layer Clock Rate."},
-  {"llID",               "Logic Layer ID (Unique id within chain)"},
-  {"cacheLineSize",      "Optional, used to find mapping requests to Vaults", "64"},
+  {"clock",                           "Logic Layer Clock Rate."},
+  {"llID",                            "Logic Layer ID (Unique id within chain)"},
+  {"cacheLineSize",                   "Optional, used to find mapping requests to Vaults", "64"},
   {"vault.num_dram_banks_per_rank",   "Number of Banks per Rank in a single DRAM module, should follow ini files. numChannel should be 1.", NULL},
-  {"req_LimitPerCycle",  "Number of memory events which can be processed per cycle per link."},
-  {"LL_MASK",            "Bitmask to determine 'ownership' of an address by a cube. A cube 'owns' an address if ((((addr >> LL_SHIFT) & LL_MASK) == llID) || (LL_MASK == 0)). LL_SHIFT is set in vaultGlobals.h and is 8 by default."},
-  {"terminal",           "Is this the last cube in the chain?"},
-  {"vaults",             "Number of vaults per cube."},
-  {"debug",              "0 (default): No debugging, 1: STDOUT, 2: STDERR, 3: FILE."},
-  {"debug_level",        "debug verbosity level (0-10)"},
-  {"statistics_format",  "Optional, Stats format. Options: 0[default], 1[MacSim]", "0"},
+  {"req_LimitPerCycle",               "Number of memory events which can be processed per cycle per link."},
+  {"LL_MASK",                         "Bitmask to determine 'ownership' of an address by a cube. A cube 'owns' an address if ((((addr >> LL_SHIFT) & LL_MASK) == llID) || (LL_MASK == 0)). LL_SHIFT is set in vaultGlobals.h and is 8 by default."},
+  {"terminal",                        "Is this the last cube in the chain?"},
+  {"vaults",                          "Number of vaults per cube."},
+  {"debug",                           "0 (default): No debugging, 1: STDOUT, 2: STDERR, 3: FILE."},
+  {"debug_level",                     "debug verbosity level (0-10)"},
+  {"statistics_format",               "Optional, Stats format. Options: 0[default], 1[MacSim]", "0"},
   { NULL, NULL }
 };
 
-static const ElementInfoPort logicLayer_ports[] = {
-  {"bus_%(vaults)d", "Link to the individual memory vaults", memEventList},
-  {"toCPU", "Connection towards the processor (directly to the proessor, or down the chain in the direction of the processor)", memEventList},    
-  {"toMem", "If 'terminal' is 0 (i.e. this is not the last cube in the chain) then this port connects to the next cube.", memEventList},
-  {NULL, NULL, NULL}
-};
-
-// VaultSimC
+// ------------------------------------------------------- VaultSimC -------------------------------------------------------------//
 static const ElementInfoParam VaultSimC_params[] = {
   {"clock",                           "Vault Clock Rate.", "1.0 Ghz"},
   {"cacheLineSize",                   "Optional, used to strip address bits for DRAMSim2", "64"},
@@ -129,6 +129,7 @@ static SubComponent* create_Vault(Component* comp, Params& params) {
     return new Vault(comp, params);
 }
 
+// ------------------------------------------------------- Vault -------------------------------------------------------------//
 static const ElementInfoParam Vault_params[] = {
     {"id",                        "Unique ID number of Vault", NULL},
     {"device_ini",                "Name of DRAMSim Device configuration file", NULL},

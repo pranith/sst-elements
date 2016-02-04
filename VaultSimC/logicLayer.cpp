@@ -50,8 +50,8 @@ logicLayer::logicLayer(ComponentId_t id, Params& params) : IntrospectedComponent
     // VaultSims Initializations (Links)
     numVaults = params.find_integer("vaults", -1);
     if (-1 == numVaults) 
-        dbg.fatal(CALL_INFO, -1, " no numVaults defined\n");
-    // connect up our vaults
+        dbg.fatal(CALL_INFO, -1, "numVaults not defined\n");
+    // connect our vaults
     for (int i = 0; i < numVaults; ++i) {
         char bus_name[50];
         snprintf(bus_name, 50, "bus_%d", i);
@@ -63,17 +63,19 @@ logicLayer::logicLayer(ComponentId_t id, Params& params) : IntrospectedComponent
         else
             dbg.fatal(CALL_INFO, -1, " could not find %s\n", bus_name);
     }
+    
     out.output("*LogicLayer%d: Connected %d Vaults\n", ident, numVaults);
     #ifdef USE_VAULTSIM_HMC
     out.output("*LogicLayer%d: Flag USE_VAULTSIM_HMC set\n", ident);
     #endif
 
-    // Connect Chain
+    // Connect Chain (cpu and other LL links (FIXME:multiple logiclayer support)
     toCPU = configureLink("toCPU");
-    if (!terminal) 
-        toMem = configureLink("toMem");
-    else 
+    if (terminal) 
         toMem = NULL;
+    else
+        toMem = configureLink("toMem");
+        
     dbg.debug(_INFO_, "Made LogicLayer %d toMem:%p toCPU:%p\n", llID, toMem, toCPU);
 
 
