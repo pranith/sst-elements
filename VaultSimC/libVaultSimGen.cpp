@@ -30,7 +30,7 @@ const char *memEventList[] = {
 // ------------------------------------------------------- Logiclayer -------------------------------------------------------------//
 static const ElementInfoPort logicLayer_ports[] = {
   {"bus_%(vaults)d", "Link to the individual memory vaults", memEventList},
-  {"toCPU", "Connection towards the processor (directly to the proessor, or down the chain in the direction of the processor)", memEventList},    
+  {"toCPU", "Connection towards the processor (directly to the processor, or down the chain in the direction of the processor)", memEventList},    
   {"toMem", "If 'terminal' is 0 (i.e. this is not the last cube in the chain) then this port connects to the next cube.", memEventList},
   {NULL, NULL, NULL}
 };
@@ -65,6 +65,8 @@ static const ElementInfoParam logicLayer_params[] = {
 
 // --------------------------------------------------------- Quad ----------------------------------------------------------------//
 static const ElementInfoPort quad_ports[] = {
+  {"bus_%(vaults)d", "Link to the individual memory vaults", memEventList},
+  {"toLogicLayer", "Link to LogicLayer", memEventList},
   {NULL, NULL, NULL}
 };
 

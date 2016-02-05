@@ -61,13 +61,24 @@ private:
      */
     bool clock(Cycle_t);
 
+    /**
+     *  Stats
+     */
+    // Helper function for printing statistics in MacSim format
+    template<typename T>
+    void writeTo(ofstream &ofs, string prefix, string name, T count);
+    void printStatsForMacSim();
+
 
 private:
     int quadID;
     int numVaultPerQuad;
+    int numVaultPerQuad2;
+    uint64_t sendAddressMask;
+    int sendAddressShift;
 
     // SST Links
-    memChans_t vaultChans;
+    memChans_t outChans;
     SST::Link *toLogicLayer;
 
     // cacheLineSize

@@ -54,12 +54,12 @@ logicLayer::logicLayer(ComponentId_t id, Params& params) : IntrospectedComponent
     CacheLineSize = params.find_integer("cacheLineSize", 64);
     CacheLineSizeLog2 = log(CacheLineSize) / log(2);
 
-    // VaultSims Initializations (Links)
     numVaults = params.find_integer("vaults", -1);
     numVaults2 = log(numVaults) / log(2);
     if (-1 == numVaults) 
         dbg.fatal(CALL_INFO, -1, "numVaults not defined\n");
-    // connect our quads/vaults
+    
+    // Mapping
     int numOfBus = numVaults;
     sendAddressMask = (1LL << numVaults2) - 1;
     sendAddressShift = CacheLineSizeLog2;
@@ -69,6 +69,7 @@ logicLayer::logicLayer(ComponentId_t id, Params& params) : IntrospectedComponent
         sendAddressShift = CacheLineSizeLog2 + numVaults2;
     }
 
+    // VaultSims Initializations (Links)
     for (int i = 0; i < numOfBus; ++i) {
         char bus_name[50];
         snprintf(bus_name, 50, "bus_%d", i);
@@ -172,7 +173,7 @@ bool logicLayer::clock(Cycle_t currentCycle)
 
         // (Multi LogicLayer) Check if it is for this LogicLayer
         if (isOurs(event->getAddr())) {
-            unsigned int sendID = ((event->getAddr()+65) >>  sendAddressShift) & sendAddressMask;
+            unsigned int sendID = (event->getAddr() >>  sendAddressShift) & sendAddressMask;
             outChans[sendID]->send(event);
             dbg.debug(_L4_, "LogicLayer%d sends %p to quad/vault%u @ %" PRIu64 "\n", llID, (void*)event->getAddr(), sendID, currentCycle);
         } 
@@ -227,7 +228,7 @@ bool logicLayer::clock(Cycle_t currentCycle)
         }    
     }
 
-    if (toMemory[0] > reqLimit || toMemory[1] > reqLimit || toCpu[0] > reqLimit || toCpu[1] > reqLimit) {
+    if (toMemory[0] > reqLimit || toMemory[1] > reqLimit || toCpu[0] > reqLimit || toCpu[1] > reqLimit) { //FIXME-currently limit is not working
         dbg.output(CALL_INFO, "logicLayer%d Bandwdith: %d %d %d %d\n", llID, toMemory[0], toMemory[1], toCpu[0], toCpu[1]);
     }
 
