@@ -13,11 +13,17 @@
 #include <sst/core/serialization.h>
 #include <sst/core/element.h>
 #include <sst/core/component.h>
+#include <sst/core/subcomponent.h>
+#include <sst/core/output.h>
+#include <sst/core/params.h>
 
 #include "Vault.h"
 
+using namespace std;
+using namespace SST;
+
 extern "C" {
-  Component* VaultSimCAllocComponent( SST::ComponentId_t id,  SST::Params& params );
+  Component* create_VaultSimC( SST::ComponentId_t id,  SST::Params& params );
   Component* create_logicLayer( SST::ComponentId_t id,  SST::Params& params );
   Component* create_quad( SST::ComponentId_t id,  SST::Params& params );
 }
@@ -29,9 +35,10 @@ const char *memEventList[] = {
 
 // ------------------------------------------------------- Logiclayer -------------------------------------------------------------//
 static const ElementInfoPort logicLayer_ports[] = {
-  {"bus_%(vaults)d", "Link to the individual memory vaults", memEventList},
+  {"bus_%(vaults/quad)d", "Link to the individual memory vaults/quad. Bus ID Should match ID of Quad", memEventList},
   {"toCPU", "Connection towards the processor (directly to the processor, or down the chain in the direction of the processor)", memEventList},    
   {"toMem", "If 'terminal' is 0 (i.e. this is not the last cube in the chain) then this port connects to the next cube.", memEventList},
+  {"toXBar", "Link to Quad XBar shared between Quads", memEventList},
   {NULL, NULL, NULL}
 };
 
@@ -66,7 +73,8 @@ static const ElementInfoParam logicLayer_params[] = {
 // --------------------------------------------------------- Quad ----------------------------------------------------------------//
 static const ElementInfoPort quad_ports[] = {
   {"bus_%(vaults)d", "Link to the individual memory vaults", memEventList},
-  {"toLogicLayer", "Link to LogicLayer", memEventList},
+  {"toLogicLayer", "Link to LogicLayer to answer requests", memEventList},
+  {"toXBar", "Link to LogicLayer XBar shared between Quads", memEventList},
   {NULL, NULL, NULL}
 };
 
@@ -78,6 +86,7 @@ static const ElementInfoParam quad_params[] = {
   {"clock",                           "Quad Clock Rate", "2.0 Ghz"},
   {"quadID",                          "Quad ID"},
   {"num_vault_per_quad",              "Number of Vaults per quad", "4"},
+  {"num_all_vaults",                  "Number of all vaults in this HMC, needed for address mapping"},
   {"debug",                           "0 (default): No debugging, 1: STDOUT, 2: STDERR, 3: FILE.", "0"},
   {"debug_level",                     "debug verbosity level (0-10)"},
   {"statistics_format",               "Optional, Stats format. Options: 0[default], 1[MacSim]", "0"},
@@ -138,7 +147,7 @@ static const ElementInfoComponent components[] = {
   { "quad",
     "Quads for LogicLayer Component",
     NULL,
-    create_logicLayer,
+    create_quad,
     quad_params,
     quad_ports,
     COMPONENT_CATEGORY_MEMORY,
@@ -147,7 +156,7 @@ static const ElementInfoComponent components[] = {
   { "VaultSimC",
     "Vault Component",
     NULL,
-    VaultSimCAllocComponent,
+    create_VaultSimC,
     VaultSimC_params,
     VaultSimC_ports,
     COMPONENT_CATEGORY_MEMORY,

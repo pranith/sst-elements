@@ -92,11 +92,20 @@ private:
     unsigned int llID;
 
     // SST Links
+    int numOfOutBus;
     memChans_t outChans;                 // SST links to each Quad/Vault
     SST::Link *toMem;
     SST::Link *toCPU;
+    SST::Link *toXBar;
+
+    // Mapping
     uint64_t sendAddressMask;
     int sendAddressShift;
+    uint64_t quadIDAddressMask;
+    int quadIDAddressShift;
+
+    //Quad support
+    unsigned int currentSendID;
 
     // cacheLineSize
     uint64_t CacheLineSize;             // it is used to determine VaultIDs

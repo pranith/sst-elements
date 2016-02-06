@@ -42,6 +42,11 @@ quad::quad(ComponentId_t id, Params& params) : IntrospectedComponent( id )
     CacheLineSize = params.find_integer("cacheLineSize", 64);
     CacheLineSizeLog2 = log(CacheLineSize) / log(2);
 
+    numTotalVaults = params.find_integer("num_all_vaults", -1);
+    numTotalVaults2 = log(numTotalVaults) / log(2);
+    if (-1 == numTotalVaults) 
+        dbg.fatal(CALL_INFO, -1, "num_all_vaults not defined\n");
+
     // clock
     std::string frequency;
     frequency = params.find_string("clock", "2.0 Ghz");
@@ -50,6 +55,9 @@ quad::quad(ComponentId_t id, Params& params) : IntrospectedComponent( id )
 
     // link to LogicLayer
     toLogicLayer = configureLink("toLogicLayer");
+
+    // link to Xbar
+    toXBar = configureLink("toXBar");
 
     // links to Vaults
     for (int i = 0; i < numVaultPerQuad; ++i) {
@@ -68,6 +76,10 @@ quad::quad(ComponentId_t id, Params& params) : IntrospectedComponent( id )
     sendAddressMask = (1LL << numVaultPerQuad2) - 1;
     sendAddressShift = CacheLineSizeLog2;
 
+    quadIDAddressMask = (1LL << numVaultPerQuad) - 1;
+    quadIDAddressShift = CacheLineSizeLog2 + numTotalVaults2;
+  
+
 }
 
 bool quad::clock(Cycle_t currentCycle) {
@@ -80,12 +92,24 @@ bool quad::clock(Cycle_t currentCycle) {
         if (NULL == event)
             dbg.fatal(CALL_INFO, -1, "Quad%d got bad event\n", quadID);
 
-        unsigned int sendID = (event->getAddr() >>  sendAddressShift) & sendAddressMask;
-        outChans[sendID]->send(event);
-        dbg.debug(_L5_, "Quad%d sends %p to quad/vault%u @ %" PRIu64 "\n", quadID, (void*)event->getAddr(), sendID, currentCycle);
+        unsigned int evQuadID = (event->getAddr() >>  quadIDAddressShift) & quadIDAddressMask;
+
+        // if event Quad ID matches Quad ID send it
+        if (evQuadID == quadID) {
+            dbg.debug(_L5_, "Quad%d %p with ID %u matches quad ID @ %" PRIu64 "\n", quadID, (void*)event->getAddr(), evQuadID, currentCycle); 
+            unsigned int sendID = (event->getAddr() >>  sendAddressShift) & sendAddressMask;
+            outChans[sendID]->send(event);
+            dbg.debug(_L5_, "Quad%d sends %p to vault%u @ %" PRIu64 "\n", quadID, (void*)event->getAddr(), sendID, currentCycle); 
+        }
+
+        // event Quad ID not matching Quad ID, send it to Xbar
+        else {
+            dbg.debug(_L5_, "Quad%d %p with ID %u not matching quad ID, sending it to Xbar @ %" PRIu64 "\n", quadID, (void*)event->getAddr(), evQuadID, currentCycle);
+            toXBar->send(event);
+        }
     }
 
-    // Check for events from Vaults
+    // Check for events from Vaults, if any send directly to LogicLayer
     unsigned j = 0;
     for (memChans_t::iterator it = outChans.begin(); it != outChans.end(); ++it, ++j) {
         memChan_t *m_memChan = *it;
@@ -108,6 +132,14 @@ void quad::finish()
 
 }
 
+/*
+ * libVaultSimGen Functions
+ */
+
+extern "C" Component* create_quad( SST::ComponentId_t id,  SST::Params& params ) 
+{
+    return new quad( id, params );
+}
 
 /*
     Other Functions

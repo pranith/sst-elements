@@ -183,10 +183,12 @@ bool VaultSimC::clock(Cycle_t currentCycle)
 }
 
 
-extern "C" {
-    VaultSimC* VaultSimCAllocComponent(SST::ComponentId_t id,  SST::Params& params) 
-    {
-        return new VaultSimC(id, params);
-    }
+/*
+ * libVaultSimGen Functions
+ */
+
+extern "C" VaultSimC* create_VaultSimC(SST::ComponentId_t id,  SST::Params& params) 
+{
+    return new VaultSimC(id, params);
 }
 

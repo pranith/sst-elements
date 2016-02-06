@@ -60,17 +60,20 @@ logicLayer::logicLayer(ComponentId_t id, Params& params) : IntrospectedComponent
         dbg.fatal(CALL_INFO, -1, "numVaults not defined\n");
     
     // Mapping
-    int numOfBus = numVaults;
+    numOfOutBus = numVaults;
     sendAddressMask = (1LL << numVaults2) - 1;
     sendAddressShift = CacheLineSizeLog2;
     if (haveQuad) {
-        numOfBus = numVaults/numVaultPerQuad;
-        sendAddressMask = (1LL << numVaultPerQuad) - 1;
-        sendAddressShift = CacheLineSizeLog2 + numVaults2;
+        numOfOutBus = numVaults/numVaultPerQuad;
+        quadIDAddressMask = (1LL << numVaultPerQuad) - 1;
+        quadIDAddressShift = CacheLineSizeLog2 + numVaults2;
+        currentSendID = 0;
     }
+    
 
+    // ** -----LINKS START-----**//
     // VaultSims Initializations (Links)
-    for (int i = 0; i < numOfBus; ++i) {
+    for (int i = 0; i < numOfOutBus; ++i) {
         char bus_name[50];
         snprintf(bus_name, 50, "bus_%d", i);
         memChan_t *chan = configureLink(bus_name);      //link delay is configurable by python scripts
@@ -82,6 +85,17 @@ logicLayer::logicLayer(ComponentId_t id, Params& params) : IntrospectedComponent
             dbg.fatal(CALL_INFO, -1, " could not find %s\n", bus_name);
     }
 
+    // link to Xbar
+    toXBar = configureLink("toXBar");
+
+    // Connect Chain (cpu and other LL links (FIXME:multiple logiclayer support)
+    toCPU = configureLink("toCPU");
+    if (terminal) 
+        toMem = NULL;
+    else
+        toMem = configureLink("toMem");
+    // ** -----LINKS END----- **//
+
     // Output to user
     if (haveQuad)
         out.output("*LogicLayer%d: Connected %d Quads\n", llID, numVaults/numVaultPerQuad);
@@ -92,13 +106,6 @@ logicLayer::logicLayer(ComponentId_t id, Params& params) : IntrospectedComponent
     #ifdef USE_VAULTSIM_HMC
     out.output("*LogicLayer%d: Flag USE_VAULTSIM_HMC set\n", llID);
     #endif
-
-    // Connect Chain (cpu and other LL links (FIXME:multiple logiclayer support)
-    toCPU = configureLink("toCPU");
-    if (terminal) 
-        toMem = NULL;
-    else
-        toMem = configureLink("toMem");
         
     dbg.debug(_INFO_, "Made LogicLayer %d toMem:%p toCPU:%p\n", llID, toMem, toCPU);
 
@@ -153,9 +160,9 @@ bool logicLayer::clock(Cycle_t currentCycle)
      **/
     while ((toCpu[0] < reqLimit) && (ev = toCPU->recv())) {
         MemEvent *event  = dynamic_cast<MemEvent*>(ev);
-        dbg.debug(_L4_, "LogicLayer%d got req for %p (%" PRIu64 " %d)\n", llID, (void*)event->getAddr(), event->getID().first, event->getID().second);
         if (NULL == event)
             dbg.fatal(CALL_INFO, -1, "LogicLayer%d got bad event\n", llID);
+        dbg.debug(_L4_, "LogicLayer%d got req for %p (%" PRIu64 " %d)\n", llID, (void*)event->getAddr(), event->getID().first, event->getID().second);
 
         // HMC Type verifications and stats
         #ifdef USE_VAULTSIM_HMC
@@ -173,9 +180,17 @@ bool logicLayer::clock(Cycle_t currentCycle)
 
         // (Multi LogicLayer) Check if it is for this LogicLayer
         if (isOurs(event->getAddr())) {
-            unsigned int sendID = (event->getAddr() >>  sendAddressShift) & sendAddressMask;
-            outChans[sendID]->send(event);
-            dbg.debug(_L4_, "LogicLayer%d sends %p to quad/vault%u @ %" PRIu64 "\n", llID, (void*)event->getAddr(), sendID, currentCycle);
+            if (haveQuad) {
+                // for quad, send it sequentially, without checking address (pg. 22 of Rosenfield thesis)
+                outChans[currentSendID]->send(event);
+                dbg.debug(_L4_, "LogicLayer%d sends %p to quad%u @ %" PRIu64 "\n", llID, (void*)event->getAddr(), currentSendID, currentCycle);
+                currentSendID = (currentSendID++) % numOfOutBus;
+            }
+            else {
+                unsigned int sendID = (event->getAddr() >>  sendAddressShift) & sendAddressMask;
+                outChans[sendID]->send(event);
+                dbg.debug(_L4_, "LogicLayer%d sends %p to vault%u @ %" PRIu64 "\n", llID, (void*)event->getAddr(), sendID, currentCycle);
+            }
         } 
         // This event is not for this LogicLayer
         else {
@@ -228,6 +243,22 @@ bool logicLayer::clock(Cycle_t currentCycle)
         }    
     }
 
+    // 4)
+    /* Check Xbar shared between Quads
+     *     if any event, calculate quadID and send it
+     **/
+    if (haveQuad)
+        while(ev = toXBar->recv()) {
+            MemEvent *event  = dynamic_cast<MemEvent*>(ev);
+            if (NULL == event)
+                dbg.fatal(CALL_INFO, -1, "LogicLayer%d got bad event\n", llID);
+            dbg.debug(_L4_, "LogicLayer%d XBar got req for %p (%" PRIu64 " %d)\n", llID, (void*)event->getAddr(), event->getID().first, event->getID().second);
+
+            unsigned int evQuadID = (event->getAddr() >>  quadIDAddressShift) & quadIDAddressMask;
+            outChans[evQuadID]->send(event);
+            dbg.debug(_L4_, "LogicLayer%d sends %p to quad%u @ %" PRIu64 "\n", llID, (void*)event->getAddr(), evQuadID, currentCycle);
+        }
+
     if (toMemory[0] > reqLimit || toMemory[1] > reqLimit || toCpu[0] > reqLimit || toCpu[1] > reqLimit) { //FIXME-currently limit is not working
         dbg.output(CALL_INFO, "logicLayer%d Bandwdith: %d %d %d %d\n", llID, toMemory[0], toMemory[1], toCpu[0], toCpu[1]);
     }
@@ -236,10 +267,19 @@ bool logicLayer::clock(Cycle_t currentCycle)
 }
 
 
+/*
+ * libVaultSimGen Functions
+ */
+
 extern "C" Component* create_logicLayer( SST::ComponentId_t id,  SST::Params& params ) 
 {
     return new logicLayer( id, params );
 }
+
+
+/*
+ *   Other Functions
+ */
 
 
 // Determine if we 'own' a given address
@@ -248,10 +288,6 @@ bool logicLayer::isOurs(unsigned int addr)
         return ((((addr >> LL_SHIFT) & LL_MASK) == llID) || (LL_MASK == 0));
 }
 
-
-/*
-    Other Functions
-*/
 
 /*
  *  Print Macsim style output in a file

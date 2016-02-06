@@ -71,15 +71,22 @@ private:
 
 
 private:
-    int quadID;
+    unsigned int quadID;
     int numVaultPerQuad;
     int numVaultPerQuad2;
+    int numTotalVaults;
+    int numTotalVaults2;
+
+    // Mapping
     uint64_t sendAddressMask;
     int sendAddressShift;
+    uint64_t quadIDAddressMask;
+    int quadIDAddressShift;
 
     // SST Links
     memChans_t outChans;
     SST::Link *toLogicLayer;
+    SST::Link *toXBar;
 
     // cacheLineSize
     uint64_t CacheLineSize;             // it is used to determine VaultIDs
