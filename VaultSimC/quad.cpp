@@ -47,6 +47,8 @@ quad::quad(ComponentId_t id, Params& params) : IntrospectedComponent( id )
     if (-1 == numTotalVaults) 
         dbg.fatal(CALL_INFO, -1, "num_all_vaults not defined\n");
 
+    statsFormat = params.find_integer("statistics_format", 0);
+
     // clock
     std::string frequency;
     frequency = params.find_string("clock", "2.0 Ghz");
@@ -78,12 +80,15 @@ quad::quad(ComponentId_t id, Params& params) : IntrospectedComponent( id )
         dbg.fatal(CALL_INFO, -1, " could not find %s\n", bus_name);
     }
 
-    //Mapping
+    // Mapping
     sendAddressMask = (1LL << numVaultPerQuad2) - 1;
     sendAddressShift = CacheLineSizeLog2;
 
     quadIDAddressMask = (1LL << (numTotalVaults/numVaultPerQuad) ) - 1;
     quadIDAddressShift = CacheLineSizeLog2 + numTotalVaults2;
+
+    // Stats
+    statTotalTransactionsRecv = registerStatistic<uint64_t>("Total_transactions_recv", "0");  
   
 
 }
@@ -94,9 +99,10 @@ bool quad::clock(Cycle_t currentCycle) {
     // Check for events from LogicLayer
     while(ev=toLogicLayer->recv()) {
         MemEvent *event  = dynamic_cast<MemEvent*>(ev);
-        dbg.debug(_L5_, "Quad%d got req for %p (%" PRIu64 " %d)\n", quadID, (void*)event->getAddr(), event->getID().first, event->getID().second);
         if (NULL == event)
             dbg.fatal(CALL_INFO, -1, "Quad%d got bad event\n", quadID);
+        dbg.debug(_L5_, "Quad%d got req for %p (%" PRIu64 " %d)\n", quadID, (void*)event->getAddr(), event->getID().first, event->getID().second);
+        statTotalTransactionsRecv->addData(1);
 
         unsigned int evQuadID = (event->getAddr() >>  quadIDAddressShift) & quadIDAddressMask;
         evQuadID = quadID;
@@ -167,7 +173,7 @@ void quad::printStatsForMacSim() {
     ofs.exceptions(std::ofstream::eofbit | std::ofstream::failbit | std::ofstream::badbit);
     ofs.open(filename.c_str(), std::ios_base::out);
 
-    //writeTo(ofs, name_, string("total_memory_ops_processed"), memOpsProcessed->getCollectionCount());
+    writeTo(ofs, name_, string("total_trans_recv"),               statTotalTransactionsRecv->getCollectionCount());
 }
 
 

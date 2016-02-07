@@ -92,6 +92,9 @@ private:
     uint64_t CacheLineSize;             // it is used to determine VaultIDs
     unsigned CacheLineSizeLog2;         // bits of CacheLineSize
 
+    // stats
+    Statistic<uint64_t>* statTotalTransactionsRecv;
+
     // Output
     Output dbg;                 // Output, for printing debuging commands
     Output out;                 // Output, for printing always printed info and stats

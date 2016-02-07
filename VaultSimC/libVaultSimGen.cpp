@@ -79,6 +79,7 @@ static const ElementInfoPort quad_ports[] = {
 };
 
 static const ElementInfoStatistic quad_statistics[] = {
+  {"Total_transactions_recv",        "Total transactions", "reqs", 1},
   { NULL, NULL, NULL, 0 }
 };
 
