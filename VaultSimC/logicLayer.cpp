@@ -65,7 +65,8 @@ logicLayer::logicLayer(ComponentId_t id, Params& params) : IntrospectedComponent
     sendAddressShift = CacheLineSizeLog2;
     if (haveQuad) {
         numOfOutBus = numVaults/numVaultPerQuad;
-        quadIDAddressMask = (1LL << (numVaultPerQuad/numVaults) ) - 1;
+        unsigned bitsForQuadID = log2(unsigned(numVaults/numVaultPerQuad));
+        quadIDAddressMask = (1LL << bitsForQuadID ) - 1;
         quadIDAddressShift = CacheLineSizeLog2 + numVaults2;
         currentSendID = 0;
     }

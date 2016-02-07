@@ -84,7 +84,8 @@ quad::quad(ComponentId_t id, Params& params) : IntrospectedComponent( id )
     sendAddressMask = (1LL << numVaultPerQuad2) - 1;
     sendAddressShift = CacheLineSizeLog2;
 
-    quadIDAddressMask = (1LL << (numTotalVaults/numVaultPerQuad) ) - 1;
+    unsigned bitsForQuadID = log2(unsigned(numTotalVaults/numVaultPerQuad));
+    quadIDAddressMask = (1LL << bitsForQuadID) - 1;
     quadIDAddressShift = CacheLineSizeLog2 + numTotalVaults2;
 
     // Stats
@@ -105,7 +106,6 @@ bool quad::clock(Cycle_t currentCycle) {
         statTotalTransactionsRecv->addData(1);
 
         unsigned int evQuadID = (event->getAddr() >>  quadIDAddressShift) & quadIDAddressMask;
-        evQuadID = quadID;
 
         // if event Quad ID matches Quad ID send it
         if (evQuadID == quadID) {
