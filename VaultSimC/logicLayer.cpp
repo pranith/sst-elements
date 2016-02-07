@@ -87,9 +87,17 @@ logicLayer::logicLayer(ComponentId_t id, Params& params) : IntrospectedComponent
     }
 
     // link to Xbar
-    toXBar = configureLink("toXBar");
-    if (!toXBar)
-        dbg.fatal(CALL_INFO, -1, " could not find toXbar\n");
+    for (int i = 0; i < numOfOutBus; ++i) {
+        char bus_name[50];
+        snprintf(bus_name, 50, "toXBar_%d", i);
+        memChan_t *chan = configureLink(bus_name);      //link delay is configurable by python scripts
+        if (chan) {
+            toXBar.push_back(chan);
+            dbg.debug(_INFO_, "\tConnected %s\n", bus_name);
+        }
+        else
+            dbg.fatal(CALL_INFO, -1, " could not find %s\n", bus_name);
+    }
 
     // Connect Chain (cpu and other LL links (FIXME:multiple logiclayer support)
     toCPU = configureLink("toCPU");
@@ -254,17 +262,20 @@ bool logicLayer::clock(Cycle_t currentCycle)
      *     if any event, calculate quadID and send it
      **/
     if (haveQuad)
-        while(ev = toXBar->recv()) {
-            MemEvent *event  = dynamic_cast<MemEvent*>(ev);
-            if (NULL == event)
-                dbg.fatal(CALL_INFO, -1, "LogicLayer%d got bad event\n", llID);
-            dbg.debug(_L4_, "LogicLayer%d XBar got req for %p (%" PRIu64 " %d)\n", llID, (void*)event->getAddr(), event->getID().first, event->getID().second);
+        for (int quadID=0; quadID < numOfOutBus; quadID++)
+            while(ev = toXBar[quadID]->recv()) {
+                MemEvent *event  = dynamic_cast<MemEvent*>(ev);
+                if (NULL == event)
+                    dbg.fatal(CALL_INFO, -1, "LogicLayer%d got bad event\n", llID);
+                dbg.debug(_L4_, "LogicLayer%d XBar got req for %p (%" PRIu64 " %d)\n", llID, (void*)event->getAddr(), event->getID().first, event->getID().second);
 
-            unsigned int evQuadID = (event->getAddr() >>  quadIDAddressShift) & quadIDAddressMask;
-            outChans[evQuadID]->send(event);
-            dbg.debug(_L4_, "LogicLayer%d sends %p to quad%u @ %" PRIu64 "\n", llID, (void*)event->getAddr(), evQuadID, currentCycle);
-        }
+                unsigned int evQuadID = (event->getAddr() >>  quadIDAddressShift) & quadIDAddressMask;
+                outChans[evQuadID]->send(event);
+                dbg.debug(_L4_, "LogicLayer%d sends %p to quad%u @ %" PRIu64 "\n", llID, (void*)event->getAddr(), evQuadID, currentCycle);
+            }
 
+
+    // Check for limits
     if (toMemory[0] > reqLimit || toMemory[1] > reqLimit || toCpu[0] > reqLimit || toCpu[1] > reqLimit) { //FIXME-currently limit is not working
         dbg.output(CALL_INFO, "logicLayer%d Bandwdith: %d %d %d %d\n", llID, toMemory[0], toMemory[1], toCpu[0], toCpu[1]);
     }

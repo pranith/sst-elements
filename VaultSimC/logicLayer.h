@@ -96,7 +96,7 @@ private:
     memChans_t outChans;                 // SST links to each Quad/Vault
     SST::Link *toMem;
     SST::Link *toCPU;
-    SST::Link *toXBar;
+    memChans_t toXBar;
 
     // Mapping
     uint64_t sendAddressMask;
