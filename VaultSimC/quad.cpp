@@ -55,9 +55,15 @@ quad::quad(ComponentId_t id, Params& params) : IntrospectedComponent( id )
 
     // link to LogicLayer
     toLogicLayer = configureLink("toLogicLayer");
+    if (!toLogicLayer)
+        dbg.fatal(CALL_INFO, -1, " could not find toLogicLayer\n");
+    dbg.debug(_INFO_, "\tConnected toLogicLayer\n");
 
     // link to Xbar
     toXBar = configureLink("toXBar");
+    if (!toXBar)
+        dbg.fatal(CALL_INFO, -1, " could not find toXbar\n");
+    dbg.debug(_INFO_, "\tConnected toXBar\n");
 
     // links to Vaults
     for (int i = 0; i < numVaultPerQuad; ++i) {
@@ -76,7 +82,7 @@ quad::quad(ComponentId_t id, Params& params) : IntrospectedComponent( id )
     sendAddressMask = (1LL << numVaultPerQuad2) - 1;
     sendAddressShift = CacheLineSizeLog2;
 
-    quadIDAddressMask = (1LL << numVaultPerQuad) - 1;
+    quadIDAddressMask = (1LL << (numTotalVaults/numVaultPerQuad) ) - 1;
     quadIDAddressShift = CacheLineSizeLog2 + numTotalVaults2;
   
 
@@ -93,6 +99,7 @@ bool quad::clock(Cycle_t currentCycle) {
             dbg.fatal(CALL_INFO, -1, "Quad%d got bad event\n", quadID);
 
         unsigned int evQuadID = (event->getAddr() >>  quadIDAddressShift) & quadIDAddressMask;
+        evQuadID = quadID;
 
         // if event Quad ID matches Quad ID send it
         if (evQuadID == quadID) {
@@ -106,6 +113,7 @@ bool quad::clock(Cycle_t currentCycle) {
         else {
             dbg.debug(_L5_, "Quad%d %p with ID %u not matching quad ID, sending it to Xbar @ %" PRIu64 "\n", quadID, (void*)event->getAddr(), evQuadID, currentCycle);
             toXBar->send(event);
+            cout << "HI";
         }
     }
 

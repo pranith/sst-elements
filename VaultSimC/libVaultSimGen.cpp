@@ -87,6 +87,7 @@ static const ElementInfoParam quad_params[] = {
   {"quadID",                          "Quad ID"},
   {"num_vault_per_quad",              "Number of Vaults per quad", "4"},
   {"num_all_vaults",                  "Number of all vaults in this HMC, needed for address mapping"},
+  {"cacheLineSize",                   "Optional, used to find mapping requests to Vaults", "64"},
   {"debug",                           "0 (default): No debugging, 1: STDOUT, 2: STDERR, 3: FILE.", "0"},
   {"debug_level",                     "debug verbosity level (0-10)"},
   {"statistics_format",               "Optional, Stats format. Options: 0[default], 1[MacSim]", "0"},

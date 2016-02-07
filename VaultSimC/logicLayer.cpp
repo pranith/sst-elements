@@ -65,7 +65,7 @@ logicLayer::logicLayer(ComponentId_t id, Params& params) : IntrospectedComponent
     sendAddressShift = CacheLineSizeLog2;
     if (haveQuad) {
         numOfOutBus = numVaults/numVaultPerQuad;
-        quadIDAddressMask = (1LL << numVaultPerQuad) - 1;
+        quadIDAddressMask = (1LL << (numVaultPerQuad/numVaults) ) - 1;
         quadIDAddressShift = CacheLineSizeLog2 + numVaults2;
         currentSendID = 0;
     }
@@ -87,9 +87,14 @@ logicLayer::logicLayer(ComponentId_t id, Params& params) : IntrospectedComponent
 
     // link to Xbar
     toXBar = configureLink("toXBar");
+    if (!toXBar)
+        dbg.fatal(CALL_INFO, -1, " could not find toXbar\n");
 
     // Connect Chain (cpu and other LL links (FIXME:multiple logiclayer support)
     toCPU = configureLink("toCPU");
+    if (!toCPU)
+        dbg.fatal(CALL_INFO, -1, " could not find toCPU\n");
+
     if (terminal) 
         toMem = NULL;
     else
@@ -184,7 +189,7 @@ bool logicLayer::clock(Cycle_t currentCycle)
                 // for quad, send it sequentially, without checking address (pg. 22 of Rosenfield thesis)
                 outChans[currentSendID]->send(event);
                 dbg.debug(_L4_, "LogicLayer%d sends %p to quad%u @ %" PRIu64 "\n", llID, (void*)event->getAddr(), currentSendID, currentCycle);
-                currentSendID = (currentSendID++) % numOfOutBus;
+                currentSendID = (currentSendID + 1) % numOfOutBus;
             }
             else {
                 unsigned int sendID = (event->getAddr() >>  sendAddressShift) & sendAddressMask;
