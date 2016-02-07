@@ -13,12 +13,19 @@
 #include <sst/core/serialization.h>
 #include <sst/core/element.h>
 #include <sst/core/component.h>
+#include <sst/core/subcomponent.h>
+#include <sst/core/output.h>
+#include <sst/core/params.h>
 
 #include "Vault.h"
 
+using namespace std;
+using namespace SST;
+
 extern "C" {
-  Component* VaultSimCAllocComponent( SST::ComponentId_t id,  SST::Params& params );
+  Component* create_VaultSimC( SST::ComponentId_t id,  SST::Params& params );
   Component* create_logicLayer( SST::ComponentId_t id,  SST::Params& params );
+  Component* create_quad( SST::ComponentId_t id,  SST::Params& params );
 }
 
 const char *memEventList[] = {
@@ -28,9 +35,10 @@ const char *memEventList[] = {
 
 // ------------------------------------------------------- Logiclayer -------------------------------------------------------------//
 static const ElementInfoPort logicLayer_ports[] = {
-  {"bus_%(vaults)d", "Link to the individual memory vaults", memEventList},
-  {"toCPU", "Connection towards the processor (directly to the proessor, or down the chain in the direction of the processor)", memEventList},    
+  {"bus_%(vaults/quad)d", "Link to the individual memory vaults/quad. Bus ID Should match ID of Quad", memEventList},
+  {"toCPU", "Connection towards the processor (directly to the processor, or down the chain in the direction of the processor)", memEventList},    
   {"toMem", "If 'terminal' is 0 (i.e. this is not the last cube in the chain) then this port connects to the next cube.", memEventList},
+  {"toXBar_%(quad)d", "Link to Quad XBar shared between Quads", memEventList},
   {NULL, NULL, NULL}
 };
 
@@ -47,15 +55,41 @@ static const ElementInfoStatistic logicLayer_statistics[] = {
 };
 
 static const ElementInfoParam logicLayer_params[] = {
-  {"clock",                           "Logic Layer Clock Rate."},
+  {"clock",                           "Logic Layer Clock Rate." , "2.0 Ghz"},
   {"llID",                            "Logic Layer ID (Unique id within chain)"},
   {"cacheLineSize",                   "Optional, used to find mapping requests to Vaults", "64"},
-  {"vault.num_dram_banks_per_rank",   "Number of Banks per Rank in a single DRAM module, should follow ini files. numChannel should be 1.", NULL},
+  {"have_quad",                       "If logicLayer has quads set to 1", "0"},
+  {"num_vault_per_quad",              "Number of Vaults per quad", "4"},
   {"req_LimitPerCycle",               "Number of memory events which can be processed per cycle per link."},
   {"LL_MASK",                         "Bitmask to determine 'ownership' of an address by a cube. A cube 'owns' an address if ((((addr >> LL_SHIFT) & LL_MASK) == llID) || (LL_MASK == 0)). LL_SHIFT is set in vaultGlobals.h and is 8 by default."},
   {"terminal",                        "Is this the last cube in the chain?"},
   {"vaults",                          "Number of vaults per cube."},
-  {"debug",                           "0 (default): No debugging, 1: STDOUT, 2: STDERR, 3: FILE."},
+  {"debug",                           "0 (default): No debugging, 1: STDOUT, 2: STDERR, 3: FILE.", "0"},
+  {"debug_level",                     "debug verbosity level (0-10)"},
+  {"statistics_format",               "Optional, Stats format. Options: 0[default], 1[MacSim]", "0"},
+  { NULL, NULL }
+};
+
+// --------------------------------------------------------- Quad ----------------------------------------------------------------//
+static const ElementInfoPort quad_ports[] = {
+  {"bus_%(vaults)d", "Link to the individual memory vaults", memEventList},
+  {"toLogicLayer", "Link to LogicLayer to answer requests", memEventList},
+  {"toXBar", "Link to LogicLayer XBar shared between Quads", memEventList},
+  {NULL, NULL, NULL}
+};
+
+static const ElementInfoStatistic quad_statistics[] = {
+  {"Total_transactions_recv",        "Total transactions", "reqs", 1},
+  { NULL, NULL, NULL, 0 }
+};
+
+static const ElementInfoParam quad_params[] = {
+  {"clock",                           "Quad Clock Rate", "2.0 Ghz"},
+  {"quadID",                          "Quad ID"},
+  {"num_vault_per_quad",              "Number of Vaults per quad", "4"},
+  {"num_all_vaults",                  "Number of all vaults in this HMC, needed for address mapping"},
+  {"cacheLineSize",                   "Optional, used to find mapping requests to Vaults", "64"},
+  {"debug",                           "0 (default): No debugging, 1: STDOUT, 2: STDERR, 3: FILE.", "0"},
   {"debug_level",                     "debug verbosity level (0-10)"},
   {"statistics_format",               "Optional, Stats format. Options: 0[default], 1[MacSim]", "0"},
   { NULL, NULL }
@@ -65,7 +99,7 @@ static const ElementInfoParam logicLayer_params[] = {
 static const ElementInfoParam VaultSimC_params[] = {
   {"clock",                           "Vault Clock Rate.", "1.0 Ghz"},
   {"cacheLineSize",                   "Optional, used to strip address bits for DRAMSim2", "64"},
-  {"debug",                           "VaultSimC debug: 0 (default): No debugging, 1: STDOUT, 2: STDERR, 3: FILE."},
+  {"debug",                           "VaultSimC debug: 0 (default): No debugging, 1: STDOUT, 2: STDERR, 3: FILE.", "0"},
   {"debug_level",                     "VaultSimC debug verbosity level (0-10)"},
   {"statistics_format",               "Optional, Stats format. Options: 0[default], 1[MacSim]", "0"},
   {"vault.id",                        "Unique ID number of Vault", NULL},
@@ -101,17 +135,8 @@ static const ElementInfoStatistic VaultSimC_statistics[] = {
   { NULL, NULL, NULL, 0 }
 };
 
-
+// ------------------------------------------------------- Components -------------------------------------------------------------//
 static const ElementInfoComponent components[] = {
-  { "VaultSimC",
-    "Vault Component",
-    NULL,
-    VaultSimCAllocComponent,
-    VaultSimC_params,
-    VaultSimC_ports,
-    COMPONENT_CATEGORY_MEMORY,
-    VaultSimC_statistics
-  },
   { "logicLayer",
     "Logic Layer Component",
     NULL,
@@ -120,6 +145,24 @@ static const ElementInfoComponent components[] = {
     logicLayer_ports,
     COMPONENT_CATEGORY_MEMORY,
     logicLayer_statistics
+  },
+  { "quad",
+    "Quads for LogicLayer Component",
+    NULL,
+    create_quad,
+    quad_params,
+    quad_ports,
+    COMPONENT_CATEGORY_MEMORY,
+    quad_statistics
+  },
+  { "VaultSimC",
+    "Vault Component",
+    NULL,
+    create_VaultSimC,
+    VaultSimC_params,
+    VaultSimC_ports,
+    COMPONENT_CATEGORY_MEMORY,
+    VaultSimC_statistics
   },
   { NULL, NULL, NULL, NULL }
 };
@@ -169,6 +212,8 @@ static const ElementInfoStatistic Vault_statistics[] = {
   { "Hmc_ops_write_latency",        "Hmc ops write latency", "cycles", 1},
   { NULL, NULL, NULL, 0 }
 };
+
+// ------------------------------------------------------- Subcomponents -------------------------------------------------------------//
 
 static const ElementInfoSubComponent subcomponents[] = {
     {   

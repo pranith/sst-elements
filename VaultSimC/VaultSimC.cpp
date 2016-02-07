@@ -78,7 +78,7 @@ void VaultSimC::readData(unsigned id, uint64_t addr, uint64_t clockcycle)
     MemEvent *event = parentEvent->makeResponse();
 
     memChan->send(event);
-    dbg.debug(_L5_, "VaultSimC %d: read req %p answered in clock=%lu\n", vaultID, (void*)addr, clockcycle);
+    dbg.debug(_L6_, "VaultSimC %d: read req %p answered in clock=%lu\n", vaultID, (void*)addr, clockcycle);
 
     // delete old event
     delete parentEvent;
@@ -98,7 +98,7 @@ void VaultSimC::writeData(unsigned id, uint64_t addr, uint64_t clockcycle)
 
     // send event
     memChan->send(event);
-    dbg.debug(_L5_, "VaultSimC %d: write req %p answered in clock=%lu\n", vaultID, (void*)addr, clockcycle);
+    dbg.debug(_L6_, "VaultSimC %d: write req %p answered in clock=%lu\n", vaultID, (void*)addr, clockcycle);
 
     // delete old event
     delete parentEvent;
@@ -146,18 +146,18 @@ bool VaultSimC::clock(Cycle_t currentCycle)
         transaction.setHmcOpType(HMCTypeEvent);
         if (HMCTypeEvent == HMC_NONE || HMCTypeEvent == HMC_CANDIDATE) {
             transaction.resetAtomic();
-            dbg.debug(_L6_, "VaultSimC %d got a req for %p of type %s in clock=%lu\n", 
+            dbg.debug(_L7_, "VaultSimC %d got a req for %p of type %s in clock=%lu\n", 
                     vaultID, (void *)transaction.getAddr(), transaction.getHmcOpTypeStr(), currentCycle);
         }
         else {
             transaction.setAtomic();
             transaction.setIsWrite();   //all hmc ops treat as write
-            dbg.debug(_L6_, "VaultSimC %d got an atomic req for %p of type %s in clock=%lu\n", 
+            dbg.debug(_L7_, "VaultSimC %d got an atomic req for %p of type %s in clock=%lu\n", 
                     vaultID, (void *)transaction.getAddr(), transaction.getHmcOpTypeStr(), currentCycle);
         }
         #else
         transaction.resetAtomic();
-        dbg.debug(_L6_, "VaultSimC %d got a req for %p in clock=%lu (%lu %d)\n", 
+        dbg.debug(_L7_, "VaultSimC %d got a req for %p in clock=%lu (%lu %d)\n", 
                 vaultID, (void*)event->getAddr(), currentCycle, event->getID().first, event->getID().second);
         #endif
         
@@ -169,11 +169,11 @@ bool VaultSimC::clock(Cycle_t currentCycle)
         // send events off for processing
         transaction_c transaction = transQ.front();
         if ((ret = memorySystem->addTransaction(transaction))) {
-            dbg.debug(_L6_, "VaultSimC %d AddTransaction %s succeeded %p in clock=%lu\n", 
+            dbg.debug(_L7_, "VaultSimC %d AddTransaction %s succeeded %p in clock=%lu\n", 
                     vaultID, transaction.getIsWrite() ? "write" : "read", (void *)transaction.getAddr(), currentCycle);
             transQ.pop_front();
         } else {
-            dbg.debug(_L6_, "VaultSimC %d AddTransaction %s  failed %p in clock=%lu\n", 
+            dbg.debug(_L7_, "VaultSimC %d AddTransaction %s  failed %p in clock=%lu\n", 
                     vaultID, transaction.getIsWrite() ? "write" : "read", (void *)transaction.getAddr(), currentCycle);
             ret = false;
         }
@@ -183,10 +183,12 @@ bool VaultSimC::clock(Cycle_t currentCycle)
 }
 
 
-extern "C" {
-    VaultSimC* VaultSimCAllocComponent(SST::ComponentId_t id,  SST::Params& params) 
-    {
-        return new VaultSimC(id, params);
-    }
+/*
+ * libVaultSimGen Functions
+ */
+
+extern "C" VaultSimC* create_VaultSimC(SST::ComponentId_t id,  SST::Params& params) 
+{
+    return new VaultSimC(id, params);
 }
 
