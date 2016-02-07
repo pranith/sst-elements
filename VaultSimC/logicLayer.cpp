@@ -87,17 +87,18 @@ logicLayer::logicLayer(ComponentId_t id, Params& params) : IntrospectedComponent
     }
 
     // link to Xbar
-    for (int i = 0; i < numOfOutBus; ++i) {
-        char bus_name[50];
-        snprintf(bus_name, 50, "toXBar_%d", i);
-        memChan_t *chan = configureLink(bus_name);      //link delay is configurable by python scripts
-        if (chan) {
-            toXBar.push_back(chan);
-            dbg.debug(_INFO_, "\tConnected %s\n", bus_name);
+    if (haveQuad)
+        for (int i = 0; i < numOfOutBus; ++i) {
+            char bus_name[50];
+            snprintf(bus_name, 50, "toXBar_%d", i);
+            memChan_t *chan = configureLink(bus_name);      //link delay is configurable by python scripts
+            if (chan) {
+                toXBar.push_back(chan);
+                dbg.debug(_INFO_, "\tConnected %s\n", bus_name);
+            }
+            else
+                dbg.fatal(CALL_INFO, -1, " could not find %s\n", bus_name);
         }
-        else
-            dbg.fatal(CALL_INFO, -1, " could not find %s\n", bus_name);
-    }
 
     // Connect Chain (cpu and other LL links (FIXME:multiple logiclayer support)
     toCPU = configureLink("toCPU");
