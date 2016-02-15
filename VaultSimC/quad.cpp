@@ -86,12 +86,12 @@ quad::quad(ComponentId_t id, Params& params) : IntrospectedComponent( id )
 
     unsigned bitsForQuadID = log2(unsigned(numTotalVaults/numVaultPerQuad));
     quadIDAddressMask = (1LL << bitsForQuadID) - 1;
-    quadIDAddressShift = CacheLineSizeLog2 + numTotalVaults2;
+    quadIDAddressShift = CacheLineSizeLog2 + numVaultPerQuad2;
 
     // Stats
     statTotalTransactionsRecv = registerStatistic<uint64_t>("Total_transactions_recv", "0");
-    statTransactionsSentToXbar = registerStatistic<uint64_t>("Transactions_sent_to_xbar", "0");  
-
+    statTransactionsSentToXbar = registerStatistic<uint64_t>("Transactions_sent_to_xbar", "0");
+    statTotalTransactionsRecvFromVaults = registerStatistic<uint64_t>("Transactions_recv_from_vaults", "0");
 }
 
 bool quad::clock(Cycle_t currentCycle) {
@@ -131,8 +131,9 @@ bool quad::clock(Cycle_t currentCycle) {
             MemEvent *event  = dynamic_cast<MemEvent*>(ev);
             if (event == NULL)
                 dbg.fatal(CALL_INFO, -1, "Quad%d got bad event from vaults\n", quadID);
-            toLogicLayer->send(event);
             dbg.debug(_L5_, "Quad%d got event %p from vault %u @%" PRIu64 ", sent towards cpu\n", quadID, (void*)event->getAddr(), j, currentCycle);
+            toLogicLayer->send(event);
+            statTotalTransactionsRecvFromVaults->addData(1);
         }    
     }
 }
@@ -175,6 +176,7 @@ void quad::printStatsForMacSim() {
 
     writeTo(ofs, name_, string("total_trans_recv"),                 statTotalTransactionsRecv->getCollectionCount());
     writeTo(ofs, name_, string("trans_sent_to_xbar"),               statTransactionsSentToXbar->getCollectionCount());
+    writeTo(ofs, name_, string("total_trans_recv_from_vaults"),     statTotalTransactionsRecvFromVaults->getCollectionCount()); 
 }
 
 

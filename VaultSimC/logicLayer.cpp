@@ -48,6 +48,7 @@ logicLayer::logicLayer(ComponentId_t id, Params& params) : IntrospectedComponent
     haveQuad = params.find_integer("have_quad", 0);
 
     numVaultPerQuad = params.find_integer("num_vault_per_quad", 4);
+    numVaultPerQuad2 = log(numVaultPerQuad) / log(2);
 
     bool terminal = params.find_integer("terminal", 0);
 
@@ -67,7 +68,7 @@ logicLayer::logicLayer(ComponentId_t id, Params& params) : IntrospectedComponent
         numOfOutBus = numVaults/numVaultPerQuad;
         unsigned bitsForQuadID = log2(unsigned(numVaults/numVaultPerQuad));
         quadIDAddressMask = (1LL << bitsForQuadID ) - 1;
-        quadIDAddressShift = CacheLineSizeLog2 + numVaults2;
+        quadIDAddressShift = CacheLineSizeLog2 + numVaultPerQuad2;
         currentSendID = 0;
     }
     

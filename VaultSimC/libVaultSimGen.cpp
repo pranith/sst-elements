@@ -79,8 +79,9 @@ static const ElementInfoPort quad_ports[] = {
 };
 
 static const ElementInfoStatistic quad_statistics[] = {
-  {"Total_transactions_recv",        "Total transactions received", "reqs", 1},
-  {"Transactions_sent_to_xbar",        "Total transactions sent back to Xbar due to quadID not matched", "reqs", 1},
+  {"Total_transactions_recv",           "Total transactions received", "reqs", 1},
+  {"Transactions_sent_to_xbar",         "Total transactions sent back to Xbar due to quadID not matched", "reqs", 1},
+  {"Transactions_recv_from_vaults",     "Total transactions sent back to Xbar due to quadID not matched", "reqs", 1},
   { NULL, NULL, NULL, 0 }
 };
 

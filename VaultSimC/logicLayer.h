@@ -84,6 +84,7 @@ private:
 private:
     bool haveQuad;
     int numVaultPerQuad;
+    int numVaultPerQuad2;
     int numDramBanksPerRank;
     int reqLimit;
     int numVaults;
