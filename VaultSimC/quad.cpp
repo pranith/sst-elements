@@ -109,15 +109,15 @@ bool quad::clock(Cycle_t currentCycle) {
 
         // if event Quad ID matches Quad ID send it
         if (evQuadID == quadID) {
-            dbg.debug(_L5_, "Quad%d %p with ID %u matches quad ID @ %" PRIu64 "\n", quadID, (void*)event->getAddr(), evQuadID, currentCycle); 
+            dbg.debug(_L5_, "Quad%d %p with quadID %u matches quad ID @ %" PRIu64 "\n", quadID, (void*)event->getAddr(), evQuadID, currentCycle); 
             unsigned int sendID = (event->getAddr() >>  sendAddressShift) & sendAddressMask;
             outChans[sendID]->send(event);
-            dbg.debug(_L5_, "Quad%d sends %p to vault%u @ %" PRIu64 "\n", quadID, (void*)event->getAddr(), sendID+(quadID*numVaultPerQuad), currentCycle); 
+            dbg.debug(_L5_, "Quad%d sends %p to vault%u(%u) @ %" PRIu64 "\n", quadID, (void*)event->getAddr(), sendID+(quadID*numVaultPerQuad), sendID, currentCycle); 
         }
 
         // event Quad ID not matching Quad ID, send it to Xbar
         else {
-            dbg.debug(_L5_, "Quad%d %p with ID %u not matching quad ID, sending it to Xbar @ %" PRIu64 "\n", quadID, (void*)event->getAddr(), evQuadID, currentCycle);
+            dbg.debug(_L5_, "Quad%d %p with quadID %u not matching quad ID, sending it to Xbar @ %" PRIu64 "\n", quadID, (void*)event->getAddr(), evQuadID, currentCycle);
             statTransactionsSentToXbar->addData(1);
             toXBar->send(event);
         }
