@@ -94,6 +94,7 @@ private:
 
     // stats
     Statistic<uint64_t>* statTotalTransactionsRecv;
+    Statistic<uint64_t>* statTransactionsSentToXbar;
 
     // Output
     Output dbg;                 // Output, for printing debuging commands

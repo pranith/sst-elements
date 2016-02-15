@@ -89,8 +89,8 @@ quad::quad(ComponentId_t id, Params& params) : IntrospectedComponent( id )
     quadIDAddressShift = CacheLineSizeLog2 + numTotalVaults2;
 
     // Stats
-    statTotalTransactionsRecv = registerStatistic<uint64_t>("Total_transactions_recv", "0");  
-  
+    statTotalTransactionsRecv = registerStatistic<uint64_t>("Total_transactions_recv", "0");
+    statTransactionsSentToXbar = registerStatistic<uint64_t>("Transactions_sent_to_xbar", "0");  
 
 }
 
@@ -118,6 +118,7 @@ bool quad::clock(Cycle_t currentCycle) {
         // event Quad ID not matching Quad ID, send it to Xbar
         else {
             dbg.debug(_L5_, "Quad%d %p with ID %u not matching quad ID, sending it to Xbar @ %" PRIu64 "\n", quadID, (void*)event->getAddr(), evQuadID, currentCycle);
+            statTransactionsSentToXbar->addData(1);
             toXBar->send(event);
         }
     }
@@ -172,7 +173,8 @@ void quad::printStatsForMacSim() {
     ofs.exceptions(std::ofstream::eofbit | std::ofstream::failbit | std::ofstream::badbit);
     ofs.open(filename.c_str(), std::ios_base::out);
 
-    writeTo(ofs, name_, string("total_trans_recv"),               statTotalTransactionsRecv->getCollectionCount());
+    writeTo(ofs, name_, string("total_trans_recv"),                 statTotalTransactionsRecv->getCollectionCount());
+    writeTo(ofs, name_, string("trans_sent_to_xbar"),               statTransactionsSentToXbar->getCollectionCount());
 }
 
 
