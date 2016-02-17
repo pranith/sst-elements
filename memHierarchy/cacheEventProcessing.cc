@@ -480,24 +480,17 @@ void Cache::finish(){
     if(upgradeCount_ > 0) averageLatency = totalUpgradeLatency_/upgradeCount_;
     else averageLatency = 0;
 
-    if (statsFormat_ == 0) 
-        coherenceMgr->printStats(statsFile_, cf_.statGroupIds_, stats_, averageLatency, 
-                missLatency_GetS_IS, missLatency_GetS_M, missLatency_GetX_IM, missLatency_GetX_SM,
-                missLatency_GetX_M, missLatency_GetSEx_IM, missLatency_GetSEx_SM, missLatency_GetSEx_M);
-    else if (statsFormat_ == 1)
-    {
-        coherenceMgr->printStatsForMacSim(statsFile_, cf_.statGroupIds_, stats_, averageLatency, 
-                missLatency_GetS_IS, missLatency_GetS_M, missLatency_GetX_IM, missLatency_GetX_SM,
-                missLatency_GetX_M, missLatency_GetSEx_IM, missLatency_GetSEx_SM, missLatency_GetSEx_M);
-        #ifdef USE_VAULTSIM_HMC
-        coherenceMgr->printStatsForMacSimHMC(statCacheHits_hmc->getCollectionCount(),
-                statCacheHits_nonhmc->getCollectionCount(),
-                statCacheMisses_hmc->getCollectionCount(),
-                statCacheMisses_nonhmc->getCollectionCount(),
-                statRequest_hmc->getCollectionCount(),
-                statRequest_nonhmc->getCollectionCount());
-        #endif
-    }
+    coherenceMgr->printStats(statsFile_, cf_.statGroupIds_, stats_, averageLatency, 
+            missLatency_GetS_IS, missLatency_GetS_M, missLatency_GetX_IM, missLatency_GetX_SM,
+            missLatency_GetX_M, missLatency_GetSEx_IM, missLatency_GetSEx_SM, missLatency_GetSEx_M);
+#ifdef USE_VAULTSIM_HMC
+    coherenceMgr->printStatsForMacSimHMC(statCacheHits_hmc->getCollectionCount(),
+            statCacheHits_nonhmc->getCollectionCount(),
+            statCacheMisses_hmc->getCollectionCount(),
+            statCacheMisses_nonhmc->getCollectionCount(),
+            statRequest_hmc->getCollectionCount(),
+            statRequest_nonhmc->getCollectionCount());
+#endif
     listener_->printStats(*d_);
     delete cf_.cacheArray_;
     delete d_;
