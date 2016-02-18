@@ -165,33 +165,17 @@ extern "C" Component* create_quad( SST::ComponentId_t id,  SST::Params& params )
  **/
 
 void quad::printStatsForMacSim() {
-    string name_ = "Quad" + to_string(quadID);
+    string suffix = "quad_" + to_string(quadID);
     stringstream ss;
-    ss << name_.c_str() << ".stat.out";
+    ss << suffix.c_str() << ".stat.out";
     string filename = ss.str();
     
     ofstream ofs;
     ofs.exceptions(std::ofstream::eofbit | std::ofstream::failbit | std::ofstream::badbit);
     ofs.open(filename.c_str(), std::ios_base::out);
 
-    writeTo(ofs, name_, string("total_trans_recv"),                 statTotalTransactionsRecv->getCollectionCount());
-    writeTo(ofs, name_, string("trans_sent_to_xbar"),               statTransactionsSentToXbar->getCollectionCount());
-    writeTo(ofs, name_, string("total_trans_recv_from_vaults"),     statTotalTransactionsRecvFromVaults->getCollectionCount()); 
+    writeTo(ofs, suffix, string("total_trans_recv"),                 statTotalTransactionsRecv->getCollectionCount());
+    writeTo(ofs, suffix, string("trans_sent_to_xbar"),               statTransactionsSentToXbar->getCollectionCount());
+    writeTo(ofs, suffix, string("total_trans_recv_from_vaults"),     statTotalTransactionsRecvFromVaults->getCollectionCount()); 
 }
 
-
-// Helper function for printing statistics in MacSim format
-template<typename T>
-void quad::writeTo(ofstream &ofs, string prefix, string name, T count)
-{
-    #define FILED1_LENGTH 45
-    #define FILED2_LENGTH 20
-    #define FILED3_LENGTH 30
-
-    ofs.setf(ios::left, ios::adjustfield);
-    string capitalized_prefixed_name = boost::to_upper_copy(prefix + "_" + name);
-    ofs << setw(FILED1_LENGTH) << capitalized_prefixed_name;
-
-    ofs.setf(ios::right, ios::adjustfield);
-    ofs << setw(FILED2_LENGTH) << count << setw(FILED3_LENGTH) << count << endl << endl;
-}

@@ -313,40 +313,23 @@ bool logicLayer::isOurs(unsigned int addr)
  **/
 
 void logicLayer::printStatsForMacSim() {
-    string name_ = "LogicLayer" + to_string(llID);
+    string suffix = "logiclayer_" + to_string(llID);
     stringstream ss;
-    ss << name_.c_str() << ".stat.out";
+    ss << suffix.c_str() << ".stat.out";
     string filename = ss.str();
 
     ofstream ofs;
     ofs.exceptions(std::ofstream::eofbit | std::ofstream::failbit | std::ofstream::badbit);
     ofs.open(filename.c_str(), std::ios_base::out);
 
-    writeTo(ofs, name_, string("total_memory_ops_processed"), memOpsProcessed->getCollectionCount());
-    writeTo(ofs, name_, string("total_hmc_ops_processed"), HMCOpsProcessed->getCollectionCount());
+    writeTo(ofs, suffix, string("total_memory_ops_processed"), memOpsProcessed->getCollectionCount());
+    writeTo(ofs, suffix, string("total_hmc_ops_processed"), HMCOpsProcessed->getCollectionCount());
     ofs << "\n";
-    writeTo(ofs, name_, string("req_recv_from_CPU"), reqUsedToCpu[0]->getCollectionCount());
-    writeTo(ofs, name_, string("req_send_to_CPU"),   reqUsedToCpu[1]->getCollectionCount());
-    writeTo(ofs, name_, string("req_recv_from_Mem"), reqUsedToMem[0]->getCollectionCount());
-    writeTo(ofs, name_, string("req_send_to_Mem"),   reqUsedToMem[1]->getCollectionCount());
+    writeTo(ofs, suffix, string("req_recv_from_CPU"), reqUsedToCpu[0]->getCollectionCount());
+    writeTo(ofs, suffix, string("req_send_to_CPU"),   reqUsedToCpu[1]->getCollectionCount());
+    writeTo(ofs, suffix, string("req_recv_from_Mem"), reqUsedToMem[0]->getCollectionCount());
+    writeTo(ofs, suffix, string("req_send_to_Mem"),   reqUsedToMem[1]->getCollectionCount());
     ofs << "\n";
-    writeTo(ofs, name_, string("total_HMC_candidate_ops"),   HMCCandidateProcessed->getCollectionCount());
-}
-
-
-// Helper function for printing statistics in MacSim format
-template<typename T>
-void logicLayer::writeTo(ofstream &ofs, string prefix, string name, T count)
-{
-    #define FILED1_LENGTH 45
-    #define FILED2_LENGTH 20
-    #define FILED3_LENGTH 30
-
-    ofs.setf(ios::left, ios::adjustfield);
-    string capitalized_prefixed_name = boost::to_upper_copy(prefix + "_" + name);
-    ofs << setw(FILED1_LENGTH) << capitalized_prefixed_name;
-
-    ofs.setf(ios::right, ios::adjustfield);
-    ofs << setw(FILED2_LENGTH) << count << setw(FILED3_LENGTH) << count << endl << endl;
+    writeTo(ofs, suffix, string("total_HMC_candidate_ops"),   HMCCandidateProcessed->getCollectionCount());
 }
 

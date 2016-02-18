@@ -453,9 +453,9 @@ void Vault::issueAtomicComputePhase(addr2TransactionMap_t::iterator mi)
  **/
 
 void Vault::printStatsForMacSim() {
-    string name_ = "Vault" + to_string(id);
+    string suffix = "vault_" + to_string(id);
     stringstream ss;
-    ss << name_.c_str() << ".stat.out";
+    ss << suffix.c_str() << ".stat.out";
     string filename = ss.str();
 
     ofstream ofs;
@@ -472,35 +472,19 @@ void Vault::printStatsForMacSim() {
     float avgHmcOpsLatencyReadInt = (float)statReadHmcLatencyInt / statTotalHmcOps->getCollectionCount();
     float avgHmcOpsLatencyWriteInt = (float)statWriteHmcLatencyInt / statTotalHmcOps->getCollectionCount();
 
-    writeTo(ofs, name_, string("total_trans"),                      statTotalTransactions->getCollectionCount());
-    writeTo(ofs, name_, string("total_HMC_ops"),                    statTotalHmcOps->getCollectionCount());
-    writeTo(ofs, name_, string("total_non_HMC_ops"),                statTotalNonHmcOps->getCollectionCount());
-    writeTo(ofs, name_, string("total_HMC_candidate_ops"),          statTotalHmcCandidate->getCollectionCount());
+    writeTo(ofs, suffix, string("total_trans"),                      statTotalTransactions->getCollectionCount());
+    writeTo(ofs, suffix, string("total_HMC_ops"),                    statTotalHmcOps->getCollectionCount());
+    writeTo(ofs, suffix, string("total_non_HMC_ops"),                statTotalNonHmcOps->getCollectionCount());
+    writeTo(ofs, suffix, string("total_HMC_candidate_ops"),          statTotalHmcCandidate->getCollectionCount());
     ofs << "\n";
-    writeTo(ofs, name_, string("total_hmc_confilict_happened"),     statTotalHmcConfilictHappened->getCollectionCount());
+    writeTo(ofs, suffix, string("total_hmc_confilict_happened"),     statTotalHmcConfilictHappened->getCollectionCount());
     ofs << "\n";
-    writeTo(ofs, name_, string("total_non_HMC_read"),               statTotalNonHmcRead->getCollectionCount());
-    writeTo(ofs, name_, string("total_non_HMC_write"),              statTotalNonHmcWrite->getCollectionCount());
+    writeTo(ofs, suffix, string("total_non_HMC_read"),               statTotalNonHmcRead->getCollectionCount());
+    writeTo(ofs, suffix, string("total_non_HMC_write"),              statTotalNonHmcWrite->getCollectionCount());
     ofs << "\n";
-    writeTo(ofs, name_, string("avg_HMC_ops_latency_total"),        avgHmcOpsLatencyTotalInt);
-    writeTo(ofs, name_, string("avg_HMC_ops_latency_issue"),        avgHmcOpsLatencyIssueInt);
-    writeTo(ofs, name_, string("avg_HMC_ops_latency_read"),         avgHmcOpsLatencyReadInt);
-    writeTo(ofs, name_, string("avg_HMC_ops_latency_write"),        avgHmcOpsLatencyWriteInt);    
+    writeTo(ofs, suffix, string("avg_HMC_ops_latency_total"),        avgHmcOpsLatencyTotalInt);
+    writeTo(ofs, suffix, string("avg_HMC_ops_latency_issue"),        avgHmcOpsLatencyIssueInt);
+    writeTo(ofs, suffix, string("avg_HMC_ops_latency_read"),         avgHmcOpsLatencyReadInt);
+    writeTo(ofs, suffix, string("avg_HMC_ops_latency_write"),        avgHmcOpsLatencyWriteInt);    
 }
 
-
-// Helper function for printing statistics in MacSim format
-template<typename T>
-void Vault::writeTo(ofstream &ofs, string prefix, string name, T count)
-{
-    #define FILED1_LENGTH 45
-    #define FILED2_LENGTH 20
-    #define FILED3_LENGTH 30
-
-    ofs.setf(ios::left, ios::adjustfield);
-    string capitalized_prefixed_name = boost::to_upper_copy(prefix + "_" + name);
-    ofs << setw(FILED1_LENGTH) << capitalized_prefixed_name;
-
-    ofs.setf(ios::right, ios::adjustfield);
-    ofs << setw(FILED2_LENGTH) << count << setw(FILED3_LENGTH) << count << endl << endl;
-}

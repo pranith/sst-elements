@@ -149,7 +149,20 @@ private:
      */
     // Helper function for printing statistics in MacSim format
     template<typename T>
-    void writeTo(ofstream &ofs, string prefix, string name, T count);
+    void writeTo(ofstream &ofs, string suffix, string name, T count)
+    {
+        #define FILED1_LENGTH 45
+        #define FILED2_LENGTH 20
+        #define FILED3_LENGTH 30
+    
+        ofs.setf(ios::left, ios::adjustfield);
+        string capitalized_suffixed_name = boost::to_upper_copy(name + "_" + suffix);
+        ofs << setw(FILED1_LENGTH) << capitalized_suffixed_name;
+    
+        ofs.setf(ios::right, ios::adjustfield);
+        ofs << setw(FILED2_LENGTH) << count << setw(FILED3_LENGTH) << count << endl << endl;
+    }
+
     void printStatsForMacSim();
 
 public:

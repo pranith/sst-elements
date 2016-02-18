@@ -26,11 +26,6 @@
 using namespace std;
 using namespace SST;
 
-/**
- *  Stats
- */
-// Helper function for printing statistics in MacSim format
-void writeTo(ofstream &ofs, string prefix, string name, uint64_t count);
 class VaultSimC : public IntrospectedComponent {
 private:
     typedef SST::Link memChan_t;
