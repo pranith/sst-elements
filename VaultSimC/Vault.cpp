@@ -88,13 +88,6 @@ Vault::Vault(Component *comp, Params &params) : SubComponent(comp)
             dbg.fatal(CALL_INFO, -1, "numDramBanksPerRank should be bigger than 0.\n");
     #endif
 
-    // Address sent to DRAMSim
-    numBitShiftAddressDRAM = params.find_integer("num_bit_shift_address_dram", 0);
-    dbg.debug(_WARNING_, "*Vault%u: Number of bits shift for address that is sent to DRAMSim is %d. \
-        Consider vaultID/quadID bit locations", id, numBitShiftAddressDRAM);
-
-    
-
     // etc Initialization
     onFlyHmcOps.reserve(ON_FLY_HMC_OP_OPTIMUM_SIZE);
     bankBusyMap.reserve(BANK_SIZE_OPTIMUM);
@@ -298,7 +291,7 @@ void Vault::updateQueue()
             else { // Not atomic op
                 // Issue to DRAM
                 bool isWrite_ = transQ[i].getIsWrite();
-                memorySystem->addTransaction(isWrite_, transQ[i].getAddr() >> numBitShiftAddressDRAM);
+                memorySystem->addTransaction(isWrite_, transQ[i].getAddr());
                 dbg.debug(_L9_, "Vault %d: %s %p (bank%u) issued @cycle=%lu\n", 
                         id, transQ[i].getIsWrite() ? "Write" : "Read", (void*)transQ[i].getAddr(), transQ[i].getBankNo(), currentClockCycle);
 
@@ -348,7 +341,7 @@ void Vault::issueAtomicFirstMemoryPhase(addr2TransactionMap_t::iterator mi)
             dbg.fatal(CALL_INFO, -1, "Atomic operation write flag should be write\n");
         }
 
-        memorySystem->addTransaction(false, mi->second.getAddr() >> numBitShiftAddressDRAM);
+        memorySystem->addTransaction(false, mi->second.getAddr());
         dbg.debug(_L9_, "Vault %d:hmc: Atomic op %p (bank%u) read req has been issued @cycle=%lu\n", 
                 id, (void*)mi->second.getAddr(), mi->second.getBankNo(), currentClockCycle);
         // mi->second.setHmcOpState(READ_ISSUED);
@@ -386,7 +379,7 @@ void Vault::issueAtomicSecondMemoryPhase(addr2TransactionMap_t::iterator mi)
             dbg.fatal(CALL_INFO, -1, "Atomic operation write flag should be write (2nd phase)\n");
         }
 
-        memorySystem->addTransaction(true, mi->second.getAddr() >> numBitShiftAddressDRAM );
+        memorySystem->addTransaction(true, mi->second.getAddr());
         dbg.debug(_L9_, "Vault %d:hmc: Atomic op %p (bank%u) write has been issued (2nd phase) @cycle=%lu\n", 
                 id, (void*)mi->second.getAddr(), mi->second.getBankNo(), currentClockCycle);
         // mi->second.setHmcOpState(WRITE_ISSUED);

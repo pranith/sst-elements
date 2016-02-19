@@ -177,7 +177,6 @@ public:
 private:
     DRAMSim::MultiChannelMemorySystem *memorySystem;
     int numDramBanksPerRank;
-    int numBitShiftAddressDRAM;
 
     //Debugs
     Output dbg;                                  // VaulSimC wrapper dbg, for printing debuging commands
