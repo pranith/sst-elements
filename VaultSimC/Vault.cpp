@@ -79,6 +79,7 @@ Vault::Vault(Component *comp, Params &params) : SubComponent(comp)
 
     memorySystem->RegisterCallbacks(readDataCB, writeDataCB, NULL);
 
+    // Atomics Banks Mapping
     numDramBanksPerRank = 1;
     #ifdef USE_VAULTSIM_HMC
         numDramBanksPerRank = params.find_integer("num_dram_banks_per_rank", 1);
@@ -86,6 +87,13 @@ Vault::Vault(Component *comp, Params &params) : SubComponent(comp)
         if (numDramBanksPerRank < 0)
             dbg.fatal(CALL_INFO, -1, "numDramBanksPerRank should be bigger than 0.\n");
     #endif
+
+    // Address sent to DRAMSim
+    numBitShiftAddressDRAM = params.find_integer("num_bit_shift_address_dram", 0);
+    dbg.debug(_WARNING_, "*Vault%u: Number of bits shift for address that is sent to DRAMSim is %d. \
+        Consider vaultID/quadID bit locations", id, numBitShiftAddressDRAM);
+
+    
 
     // etc Initialization
     onFlyHmcOps.reserve(ON_FLY_HMC_OP_OPTIMUM_SIZE);
@@ -290,7 +298,7 @@ void Vault::updateQueue()
             else { // Not atomic op
                 // Issue to DRAM
                 bool isWrite_ = transQ[i].getIsWrite();
-                memorySystem->addTransaction(isWrite_, transQ[i].getAddr());
+                memorySystem->addTransaction(isWrite_, transQ[i].getAddr() >> numBitShiftAddressDRAM);
                 dbg.debug(_L9_, "Vault %d: %s %p (bank%u) issued @cycle=%lu\n", 
                         id, transQ[i].getIsWrite() ? "Write" : "Read", (void*)transQ[i].getAddr(), transQ[i].getBankNo(), currentClockCycle);
 
@@ -340,7 +348,7 @@ void Vault::issueAtomicFirstMemoryPhase(addr2TransactionMap_t::iterator mi)
             dbg.fatal(CALL_INFO, -1, "Atomic operation write flag should be write\n");
         }
 
-        memorySystem->addTransaction(false, mi->second.getAddr());
+        memorySystem->addTransaction(false, mi->second.getAddr() >> numBitShiftAddressDRAM);
         dbg.debug(_L9_, "Vault %d:hmc: Atomic op %p (bank%u) read req has been issued @cycle=%lu\n", 
                 id, (void*)mi->second.getAddr(), mi->second.getBankNo(), currentClockCycle);
         // mi->second.setHmcOpState(READ_ISSUED);
@@ -378,7 +386,7 @@ void Vault::issueAtomicSecondMemoryPhase(addr2TransactionMap_t::iterator mi)
             dbg.fatal(CALL_INFO, -1, "Atomic operation write flag should be write (2nd phase)\n");
         }
 
-        memorySystem->addTransaction(true, mi->second.getAddr());
+        memorySystem->addTransaction(true, mi->second.getAddr() >> numBitShiftAddressDRAM );
         dbg.debug(_L9_, "Vault %d:hmc: Atomic op %p (bank%u) write has been issued (2nd phase) @cycle=%lu\n", 
                 id, (void*)mi->second.getAddr(), mi->second.getBankNo(), currentClockCycle);
         // mi->second.setHmcOpState(WRITE_ISSUED);
@@ -453,9 +461,9 @@ void Vault::issueAtomicComputePhase(addr2TransactionMap_t::iterator mi)
  **/
 
 void Vault::printStatsForMacSim() {
-    string suffix = "vault_" + to_string(id);
+    string name_ = "Vault" + to_string(id);
     stringstream ss;
-    ss << suffix.c_str() << ".stat.out";
+    ss << name_.c_str() << ".stat.out";
     string filename = ss.str();
 
     ofstream ofs;
@@ -472,19 +480,18 @@ void Vault::printStatsForMacSim() {
     float avgHmcOpsLatencyReadInt = (float)statReadHmcLatencyInt / statTotalHmcOps->getCollectionCount();
     float avgHmcOpsLatencyWriteInt = (float)statWriteHmcLatencyInt / statTotalHmcOps->getCollectionCount();
 
-    writeTo(ofs, suffix, string("total_trans"),                      statTotalTransactions->getCollectionCount());
-    writeTo(ofs, suffix, string("total_HMC_ops"),                    statTotalHmcOps->getCollectionCount());
-    writeTo(ofs, suffix, string("total_non_HMC_ops"),                statTotalNonHmcOps->getCollectionCount());
-    writeTo(ofs, suffix, string("total_HMC_candidate_ops"),          statTotalHmcCandidate->getCollectionCount());
+    writeTo(ofs, name_, string("total_trans"),                      statTotalTransactions->getCollectionCount());
+    writeTo(ofs, name_, string("total_HMC_ops"),                    statTotalHmcOps->getCollectionCount());
+    writeTo(ofs, name_, string("total_non_HMC_ops"),                statTotalNonHmcOps->getCollectionCount());
+    writeTo(ofs, name_, string("total_HMC_candidate_ops"),          statTotalHmcCandidate->getCollectionCount());
     ofs << "\n";
-    writeTo(ofs, suffix, string("total_hmc_confilict_happened"),     statTotalHmcConfilictHappened->getCollectionCount());
+    writeTo(ofs, name_, string("total_hmc_confilict_happened"),     statTotalHmcConfilictHappened->getCollectionCount());
     ofs << "\n";
-    writeTo(ofs, suffix, string("total_non_HMC_read"),               statTotalNonHmcRead->getCollectionCount());
-    writeTo(ofs, suffix, string("total_non_HMC_write"),              statTotalNonHmcWrite->getCollectionCount());
+    writeTo(ofs, name_, string("total_non_HMC_read"),               statTotalNonHmcRead->getCollectionCount());
+    writeTo(ofs, name_, string("total_non_HMC_write"),              statTotalNonHmcWrite->getCollectionCount());
     ofs << "\n";
-    writeTo(ofs, suffix, string("avg_HMC_ops_latency_total"),        avgHmcOpsLatencyTotalInt);
-    writeTo(ofs, suffix, string("avg_HMC_ops_latency_issue"),        avgHmcOpsLatencyIssueInt);
-    writeTo(ofs, suffix, string("avg_HMC_ops_latency_read"),         avgHmcOpsLatencyReadInt);
-    writeTo(ofs, suffix, string("avg_HMC_ops_latency_write"),        avgHmcOpsLatencyWriteInt);    
+    writeTo(ofs, name_, string("avg_HMC_ops_latency_total"),        avgHmcOpsLatencyTotalInt);
+    writeTo(ofs, name_, string("avg_HMC_ops_latency_issue"),        avgHmcOpsLatencyIssueInt);
+    writeTo(ofs, name_, string("avg_HMC_ops_latency_read"),         avgHmcOpsLatencyReadInt);
+    writeTo(ofs, name_, string("avg_HMC_ops_latency_write"),        avgHmcOpsLatencyWriteInt);    
 }
-
