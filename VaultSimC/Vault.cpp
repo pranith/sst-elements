@@ -67,8 +67,8 @@ Vault::Vault(Component *comp, Params &params) : SubComponent(comp)
     string idStr = std::to_string(id);
     string traceFilename = "VAULT_" + idStr + "_EPOCHS";
 
-    dbg.output(CALL_INFO, "deviceIniFilename = %s, systemIniFilename = %s, pwd = %s, traceFilename = %s\n", 
-            deviceIniFilename.c_str(), systemIniFilename.c_str(), pwd.c_str(), traceFilename.c_str());
+    dbg.output(CALL_INFO, "deviceIniFilename = %s, systemIniFilename = %s, pwd = %s, traceFilename = %s, size=%u\n",
+            deviceIniFilename.c_str(), systemIniFilename.c_str(), pwd.c_str(), traceFilename.c_str(), ramSize);
 
     memorySystem = DRAMSim::getMemorySystemInstance(deviceIniFilename, systemIniFilename, pwd, traceFilename, ramSize); 
 
@@ -454,7 +454,7 @@ void Vault::issueAtomicComputePhase(addr2TransactionMap_t::iterator mi)
  **/
 
 void Vault::printStatsForMacSim() {
-    string name_ = "Vault" + to_string(id);
+    string name_ = "vault_" + to_string(id);
     stringstream ss;
     ss << name_.c_str() << ".stat.out";
     string filename = ss.str();
