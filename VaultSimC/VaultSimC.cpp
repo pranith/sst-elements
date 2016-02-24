@@ -36,7 +36,7 @@ VaultSimC::VaultSimC(ComponentId_t id, Params& params) : IntrospectedComponent( 
     std::string frequency = "1.0 GHz";
     frequency = params.find_string("clock", "1.0 Ghz");
 
-    memChan = configureLink("bus");     //link delay is configurable by python scripts
+    memChan = configureLink("bus", "1ps");     //link delay is configurable by python scripts
 
     int vid = params.find_integer("vault.id", -1);
     if (-1 == vid) 
