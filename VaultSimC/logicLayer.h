@@ -104,7 +104,8 @@ private:
 
     int reqLimitPerWindow;
     int reqLimitWindowSize;
-    int currentLimitReqBudget;
+    int currentLimitReqBudgetCPU[2];    // {recv, send}
+    int currentLimitReqBudgetMem[2];    // {recv, send}
     int currentLimitWindowNum;
 
     unsigned int llID;

@@ -50,7 +50,10 @@ logicLayer::logicLayer(ComponentId_t id, Params& params) : IntrospectedComponent
         dbg.fatal(CALL_INFO, -1, "req_LimitPerCycle ***DEPRECATED** kept for compatibility: use req_LimitPerWindow & req_LimitWindowSize in your configuration\n");
 
     dbg.debug(_INFO_, "req_LimitPerWindow %d, req_LimitWindowSize: %d\n", reqLimitPerWindow, reqLimitWindowSize);
-    currentLimitReqBudget = reqLimitPerWindow;
+    currentLimitReqBudgetCPU[0] = reqLimitPerWindow;
+    currentLimitReqBudgetCPU[1] = reqLimitPerWindow;
+    currentLimitReqBudgetMem[0] = reqLimitPerWindow;
+    currentLimitReqBudgetMem[1] = reqLimitPerWindow;
     currentLimitWindowNum = reqLimitWindowSize;
 
     //
@@ -185,7 +188,7 @@ bool logicLayer::clock(Cycle_t currentCycle)
     /* Check For Events From CPU
      *     Check ownership, if owned send to internal vaults, if not send to another LogicLayer
      **/
-    while ( currentLimitReqBudget && (ev = toCPU->recv()) ) {
+    while ( currentLimitReqBudgetCPU[0] && (ev = toCPU->recv()) ) {
         MemEvent *event  = dynamic_cast<MemEvent*>(ev);
         if (NULL == event)
             dbg.fatal(CALL_INFO, -1, "LogicLayer%d got bad event\n", llID);
@@ -202,7 +205,7 @@ bool logicLayer::clock(Cycle_t currentCycle)
             HMCOpsProcessed->addData(1);
         #endif
 
-        currentLimitReqBudget--;
+        currentLimitReqBudgetCPU[0]--;
         reqUsedToCpu[0]->addData(1);
 
         // (Multi LogicLayer) Check if it is for this LogicLayer
@@ -234,7 +237,7 @@ bool logicLayer::clock(Cycle_t currentCycle)
      *     and send them to CPU
      **/
     if (NULL != toMem) {
-        while ( currentLimitReqBudget && (ev = toMem->recv()) ) {
+        while ( currentLimitReqBudgetMem[0] && (ev = toMem->recv()) ) {
             MemEvent *event  = dynamic_cast<MemEvent*>(ev);
             if (NULL == event)
                 dbg.fatal(CALL_INFO, -1, "LogicLayer%d got bad event from another LogicLayer\n", llID); 
@@ -242,7 +245,8 @@ bool logicLayer::clock(Cycle_t currentCycle)
             reqUsedToMem[0]->addData(1);
     
             toCPU->send(event);
-            currentLimitReqBudget--;
+            currentLimitReqBudgetMem[0]--;
+            currentLimitReqBudgetCPU[1]--;
             reqUsedToCpu[1]->addData(1);
             dbg.debug(_L4_, "LogicLayer%d sends %p towards cpu (%" PRIu64 " %d)\n", llID, event, event->getID().first, event->getID().second);
         }
@@ -286,14 +290,20 @@ bool logicLayer::clock(Cycle_t currentCycle)
 
 
     // Check for limits
-    if (currentLimitReqBudget==0) {
-        dbg.output(CALL_INFO, "logicLayer%d request budget saturated in window number %d @cycle=%lu\n", llID, currentLimitWindowNum, currentCycle);
+    if (currentLimitReqBudgetCPU[0]==0 || currentLimitReqBudgetCPU[1]==0 || currentLimitReqBudgetMem[0]==0 || currentLimitReqBudgetMem[1]==0) {
+        dbg.output(CALL_INFO, "logicLayer%d request budget saturated (%d %d %d %d) in window number %d @cycle=%lu\n",\
+         llID, currentLimitReqBudgetCPU[0], currentLimitReqBudgetCPU[1],  currentLimitReqBudgetMem[0],  currentLimitReqBudgetMem[1], \
+         currentLimitWindowNum, currentCycle);
     }
 
     // 
     currentLimitWindowNum--;
     if (currentLimitWindowNum == 0) {
-        currentLimitReqBudget = reqLimitPerWindow;
+        currentLimitReqBudgetCPU[0] = reqLimitPerWindow;
+        currentLimitReqBudgetCPU[1] = reqLimitPerWindow;
+        currentLimitReqBudgetMem[0] = reqLimitPerWindow;
+        currentLimitReqBudgetMem[1] = reqLimitPerWindow;
+
         currentLimitWindowNum = reqLimitWindowSize;
         dbg.debug(_L5_, "LogicLayer%d request budget restored (every %d cycles) @cycle=%lu\n", llID, reqLimitWindowSize, currentCycle);
     }
