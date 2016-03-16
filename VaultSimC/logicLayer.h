@@ -99,9 +99,13 @@ private:
     int numVaultPerQuad;
     int numVaultPerQuad2;
     int numDramBanksPerRank;
-    int reqLimit;
     int numVaults;
     int numVaults2;
+
+    int reqLimitPerWindow;
+    int reqLimitWindowSize;
+    int currentLimitReqBudget;
+    int currentLimitWindowNum;
 
     unsigned int llID;
 
