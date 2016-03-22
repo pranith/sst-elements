@@ -47,19 +47,6 @@ Vault::Vault(Component *comp, Params &params) : SubComponent(comp)
     HMCCostSwap = params.find_integer("HMCCost_Swap", 0);
     HMCCostBitW = params.find_integer("HMCCost_BitW", 0);
 
-    // request limit
-    onFlyHMCOpsLimitPerWindow = params.find_integer("onFlyHmcOps_LimitPerWindow", 8);
-    if (0 >= onFlyHMCOpsLimitPerWindow)
-        dbg.fatal(CALL_INFO, -1, "onFlyHmcOps_LimitPerWindow not defined well\n");
-
-    onFlyHMCOpsLimitWindowSize = params.find_integer("onFlyHmcOps_LimitWindowSize", 1);
-    if (0 >= onFlyHMCOpsLimitWindowSize)
-        dbg.fatal(CALL_INFO, -1, "onFlyHmcOps_LimitWindowSize not defined well\n");
-
-    dbg.debug(_INFO_, "onFlyHmcOps_LimitPerWindow %d, onFlyHmcOps_LimitWindowSize: %d\n", onFlyHMCOpsLimitPerWindow, onFlyHMCOpsLimitWindowSize);
-    currentOnFlyHMCOpsBudget = onFlyHMCOpsLimitPerWindow;
-    currentLimitWindowNum = onFlyHMCOpsLimitWindowSize;
-
     // DRAMSim2 Initialization
     string deviceIniFilename = params.find_string("device_ini", NO_STRING_DEFINED);
     if (NO_STRING_DEFINED == deviceIniFilename)
@@ -80,8 +67,8 @@ Vault::Vault(Component *comp, Params &params) : SubComponent(comp)
     string idStr = std::to_string(id);
     string traceFilename = "VAULT_" + idStr + "_EPOCHS";
 
-    dbg.output(CALL_INFO, "deviceIniFilename = %s, systemIniFilename = %s, pwd = %s, traceFilename = %s, size=%u\n",
-            deviceIniFilename.c_str(), systemIniFilename.c_str(), pwd.c_str(), traceFilename.c_str(), ramSize);
+    dbg.output(CALL_INFO, "Vault%u: deviceIniFilename = %s, systemIniFilename = %s, pwd = %s, traceFilename = %s, size=%u\n",
+            id, deviceIniFilename.c_str(), systemIniFilename.c_str(), pwd.c_str(), traceFilename.c_str(), ramSize);
 
     memorySystem = DRAMSim::getMemorySystemInstance(deviceIniFilename, systemIniFilename, pwd, traceFilename, ramSize);
 
@@ -92,11 +79,38 @@ Vault::Vault(Component *comp, Params &params) : SubComponent(comp)
 
     memorySystem->RegisterCallbacks(readDataCB, writeDataCB, NULL);
 
+    // DramSim Update frequency (Rough way of managing internal BW)
+    DRAMSimUpdatePerWindow = params.find_integer("DRAMSim_UpdatePerWindow", 1);
+    if (0 >= DRAMSimUpdatePerWindow)
+        dbg.fatal(CALL_INFO, -1, "DRAMSim_UpdatePerWindow not defined well\n");
+
+    DRAMSimUpdateWindowSize = params.find_integer("DRAMSim_UpdateWindowSize", 1);
+    if (0 >= DRAMSimUpdateWindowSize)
+        dbg.fatal(CALL_INFO, -1, "DRAMSim_UpdateWindowSize not defined well\n");
+
+    dbg.output(CALL_INFO, "Vault%u: DRAMSim_UpdatePerWindow %d, DRAMSim_UpdateWindowSize: %d\n", id, DRAMSimUpdatePerWindow, DRAMSimUpdateWindowSize);
+    currentDRAMSimUpdateBudget = DRAMSimUpdatePerWindow;
+    currentDRAMSimUpdateWindowNum = DRAMSimUpdateWindowSize;
+
+    // request limit
+    onFlyHMCOpsLimitPerWindow = params.find_integer("onFlyHmcOps_LimitPerWindow", 8);
+    if (0 >= onFlyHMCOpsLimitPerWindow)
+        dbg.fatal(CALL_INFO, -1, "onFlyHmcOps_LimitPerWindow not defined well\n");
+
+    onFlyHMCOpsLimitWindowSize = params.find_integer("onFlyHmcOps_LimitWindowSize", 1);
+    if (0 >= onFlyHMCOpsLimitWindowSize)
+        dbg.fatal(CALL_INFO, -1, "onFlyHmcOps_LimitWindowSize not defined well\n");
+
+    dbg.output(CALL_INFO, "Vault%u: onFlyHmcOps_LimitPerWindow %d, onFlyHmcOps_LimitWindowSize: %d\n", \
+        id, onFlyHMCOpsLimitPerWindow, onFlyHMCOpsLimitWindowSize);
+    currentOnFlyHMCOpsBudget = onFlyHMCOpsLimitPerWindow;
+    currentLimitWindowNum = onFlyHMCOpsLimitWindowSize;
+
     // Atomics Banks Mapping
     numDramBanksPerRank = 1;
     #ifdef USE_VAULTSIM_HMC
         numDramBanksPerRank = params.find_integer("num_dram_banks_per_rank", 1);
-        out.output("*Vault%u: numDramBanksPerRank %d\n", id, numDramBanksPerRank);
+        dbg.output(CALL_INFO, "Vault%u: numDramBanksPerRank %d\n", id, numDramBanksPerRank);
         if (numDramBanksPerRank < 0)
             dbg.fatal(CALL_INFO, -1, "numDramBanksPerRank should be bigger than 0.\n");
     #endif
@@ -219,8 +233,20 @@ void Vault::writeComplete(unsigned id, uint64_t addr, uint64_t cycle)
 
 void Vault::update()
 {
-    memorySystem->update();
     currentClockCycle++;
+
+    //DRAMSim update
+    if (currentDRAMSimUpdateBudget) {
+        memorySystem->update();
+        currentDRAMSimUpdateBudget--;
+    }
+
+    currentDRAMSimUpdateWindowNum--;
+    if (currentDRAMSimUpdateWindowNum == 0) {
+        currentDRAMSimUpdateBudget = DRAMSimUpdatePerWindow;
+        currentDRAMSimUpdateWindowNum = DRAMSimUpdateWindowSize;
+        dbg.debug(_L10_, "Vault %d: DRAMSim Update Budget restored to %d @cycle=%lu\n", id, DRAMSimUpdatePerWindow, currentClockCycle);
+    }
 
     // If we are in compute phase, check for cycle compute done
     if (!computePhaseEnabledBanks.empty())
@@ -291,7 +317,7 @@ void Vault::updateQueue()
         // Bank is unlock
         if (!getBankState(transQ[i].getBankNo())) {
             if (transQ[i].getAtomic()) {
-                if (currentOnFlyHMCOpsBudget != 0) {
+                if (currentOnFlyHMCOpsBudget) {
                     // Lock the bank
                     lockBank(transQ[i].getBankNo());
 

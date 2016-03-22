@@ -201,6 +201,11 @@ private:
     int currentOnFlyHMCOpsBudget;
     int currentLimitWindowNum;
 
+    int DRAMSimUpdatePerWindow;
+    int DRAMSimUpdateWindowSize;
+    int currentDRAMSimUpdateBudget;
+    int currentDRAMSimUpdateWindowNum;
+
     // HMC ops Cost in Cycles
     int HMCCostLogicalOps;
     int HMCCostCASOps;
