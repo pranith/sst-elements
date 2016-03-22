@@ -1,10 +1,10 @@
 // Copyright 2009-2015 Sandia Corporation. Under the terms
 // of Contract DE-AC04-94AL85000 with Sandia Corporation, the U.S.
 // Government retains certain rights in this software.
-// 
+//
 // Copyright (c) 2009-2015, Sandia Corporation
 // All rights reserved.
-// 
+//
 // This file is part of the SST software package. For license
 // information, see the LICENSE file in the top level directory of the
 // distribution.
@@ -53,12 +53,12 @@ private:
     typedef vector<transaction_c> transQ_t;
 
 public:
-    /** 
+    /**
      * Constructor
      */
     Vault();
 
-    /** 
+    /**
      * Constructor
      * @param id Vault id
      * @param dbg VaultSimC() class wrapper sst debuger
@@ -71,25 +71,25 @@ public:
      */
     void finish();
 
-    /** 
+    /**
      * update
-     * Vaultsim handle to update DRAMSIM, it also increases the cycle 
+     * Vaultsim handle to update DRAMSIM, it also increases the cycle
      */
     void update();
 
-    /** 
+    /**
      * registerCallback
      */
     void registerCallback(callback_t *rc, callback_t *wc) { readCallback = rc; writeCallback = wc; }
 
-    /** 
+    /**
      * addTransaction
      * @param transaction
      * Adds a transaction to the transaction queue, with some local initialization for transaction
      */
     bool addTransaction(transaction_c transaction);
 
-    /** 
+    /**
      * readComplete
      * DRAMSim calls this function when it is done with a read
      */
@@ -101,13 +101,13 @@ public:
      */
     void writeComplete(unsigned id, uint64_t addr, uint64_t cycle);
 
-    /** 
+    /**
      * getId
      */
     unsigned getId() { return id; }
 
 private:
-    /** 
+    /**
      * updateQueue
      * update transaction queue and issue read/write to DRAM
      */
@@ -121,7 +121,7 @@ private:
     void issueAtomicComputePhase(addr2TransactionMap_t::iterator mi);
 
 
-    /** 
+    /**
      * Bank BusyMap Functions
      */
     inline bool getBankState(unsigned bankId) { return bankBusyMap[bankId]; }
@@ -133,8 +133,8 @@ private:
         }
     }
 
-    /** 
-     * Compute Phase Functions 
+    /**
+     * Compute Phase Functions
      */
     inline void setComputeDoneCycle(unsigned bankId, uint64_t cycle) { computeDoneCycleMap[bankId] = cycle; }
     inline uint64_t getComputeDoneCycle(unsigned bankId) { return computeDoneCycleMap[bankId]; }
@@ -154,11 +154,11 @@ private:
         #define FILED1_LENGTH 45
         #define FILED2_LENGTH 20
         #define FILED3_LENGTH 30
-    
+
         ofs.setf(ios::left, ios::adjustfield);
         string capitalized_suffixed_name = boost::to_upper_copy(name + "_" + suffix);
         ofs << setw(FILED1_LENGTH) << capitalized_suffixed_name;
-    
+
         ofs.setf(ios::right, ios::adjustfield);
         ofs << setw(FILED2_LENGTH) << count << setw(FILED3_LENGTH) << count << endl << endl;
     }
@@ -172,7 +172,7 @@ public:
     callback_t *readCallback;
     callback_t *writeCallback;
 
-    
+
 
 private:
     DRAMSim::MultiChannelMemorySystem *memorySystem;
@@ -194,6 +194,12 @@ private:
     list<unsigned> computePhaseEnabledBanks;     // Current Compute Phase Insturctions (same size as bankBusyMap)
     bank2CycleMap_t computeDoneCycleMap;         // Current Compute Done Cycle ((same size as bankBusyMap)
     bank2AddrMap_t addrComputeMap;
+
+    // Limits
+    int onFlyHMCOpsLimitPerWindow;
+    int onFlyHMCOpsLimitWindowSize;
+    int currentOnFlyHMCOpsBudget;
+    int currentLimitWindowNum;
 
     // HMC ops Cost in Cycles
     int HMCCostLogicalOps;

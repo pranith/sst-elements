@@ -1,10 +1,10 @@
 // Copyright 2009-2015 Sandia Corporation. Under the terms
 // of Contract DE-AC04-94AL85000 with Sandia Corporation, the U.S.
 // Government retains certain rights in this software.
-// 
+//
 // Copyright (c) 2009-2015, Sandia Corporation
 // All rights reserved.
-// 
+//
 // This file is part of the SST software package. For license
 // information, see the LICENSE file in the top level directory of the
 // distribution.
@@ -27,7 +27,7 @@ logicLayer::logicLayer(ComponentId_t id, Params& params) : IntrospectedComponent
 
     int debugLevel = params.find_integer("debug_level", 0);
     dbg.init("@R:LogicLayer::@p():@l " + getName() + ": ", debugLevel, 0, (Output::output_location_t)params.find_integer("debug", 0));
-    if(debugLevel < 0 || debugLevel > 10) 
+    if(debugLevel < 0 || debugLevel > 10)
         dbg.fatal(CALL_INFO, -1, "Debugging level must be between 0 and 10. \n");
 
     // logicLayer Params Initialization
@@ -38,11 +38,11 @@ logicLayer::logicLayer(ComponentId_t id, Params& params) : IntrospectedComponent
 
     // request limit
     reqLimitPerWindow = params.find_integer("req_LimitPerWindow", -1);
-    if (0 >= reqLimitPerWindow) 
+    if (0 >= reqLimitPerWindow)
         dbg.fatal(CALL_INFO, -1, " req_LimitPerWindow not defined well\n");
 
     reqLimitWindowSize = params.find_integer("req_LimitWindowSize", 1);
-    if (0 >= reqLimitWindowSize) 
+    if (0 >= reqLimitWindowSize)
         dbg.fatal(CALL_INFO, -1, " req_LimitWindowSize not defined well\n");
 
     int test = params.find_integer("req_LimitPerCycle", -1);
@@ -58,7 +58,7 @@ logicLayer::logicLayer(ComponentId_t id, Params& params) : IntrospectedComponent
 
     //
     int mask = params.find_integer("LL_MASK", -1);
-    if (-1 == mask) 
+    if (-1 == mask)
         dbg.fatal(CALL_INFO, -1, " LL_MASK not defined\n");
     LL_MASK = mask;
 
@@ -74,9 +74,9 @@ logicLayer::logicLayer(ComponentId_t id, Params& params) : IntrospectedComponent
 
     numVaults = params.find_integer("vaults", -1);
     numVaults2 = log(numVaults) / log(2);
-    if (-1 == numVaults) 
+    if (-1 == numVaults)
         dbg.fatal(CALL_INFO, -1, "numVaults not defined\n");
-    
+
     // Mapping
     numOfOutBus = numVaults;
     sendAddressMask = (1LL << numVaults2) - 1;
@@ -88,7 +88,7 @@ logicLayer::logicLayer(ComponentId_t id, Params& params) : IntrospectedComponent
         quadIDAddressShift = CacheLineSizeLog2 + numVaultPerQuad2;
         currentSendID = 0;
     }
-    
+
 
     // ** -----LINKS START-----**//
     // VaultSims Initializations (Links)
@@ -123,7 +123,7 @@ logicLayer::logicLayer(ComponentId_t id, Params& params) : IntrospectedComponent
     if (!toCPU)
         dbg.fatal(CALL_INFO, -1, " could not find toCPU\n");
 
-    if (terminal) 
+    if (terminal)
         toMem = NULL;
     else
         toMem = configureLink("toMem");
@@ -134,22 +134,13 @@ logicLayer::logicLayer(ComponentId_t id, Params& params) : IntrospectedComponent
         out.output("*LogicLayer%d: Connected %d Quads\n", llID, numVaults/numVaultPerQuad);
     else
         out.output("*LogicLayer%d: Connected %d Vaults\n", llID, numVaults);
-        
+
 
     #ifdef USE_VAULTSIM_HMC
     out.output("*LogicLayer%d: Flag USE_VAULTSIM_HMC set\n", llID);
     #endif
-        
+
     dbg.debug(_INFO_, "Made LogicLayer %d toMem:%p toCPU:%p\n", llID, toMem, toCPU);
-
-
-    numDramBanksPerRank = 1;
-    #ifdef USE_VAULTSIM_HMC
-        numDramBanksPerRank = params.find_integer("num_dram_banks_per_rank", 1);
-        out.output("*LogicLayer%u: numDramBanksPerRank %d\n", ident, numDramBanksPerRank);
-        if (numDramBanksPerRank < 0)
-            dbg.fatal(CALL_INFO, -1, "numDramBanksPerRank should be bigger than 0.\n");
-    #endif
 
     // clock
     std::string frequency;
@@ -165,13 +156,13 @@ logicLayer::logicLayer(ComponentId_t id, Params& params) : IntrospectedComponent
     HMCCandidateProcessed = registerStatistic<uint64_t>("Total_HMC_candidate_processed", "0");
     HMCTransOpsProcessed = registerStatistic<uint64_t>("Total_HMC_transactions_processed", "0");
 
-    reqUsedToCpu[0] = registerStatistic<uint64_t>("Req_recv_from_CPU", "0");  
+    reqUsedToCpu[0] = registerStatistic<uint64_t>("Req_recv_from_CPU", "0");
     reqUsedToCpu[1] = registerStatistic<uint64_t>("Req_send_to_CPU", "0");
     reqUsedToMem[0] = registerStatistic<uint64_t>("Req_recv_from_Mem", "0");
     reqUsedToMem[1] = registerStatistic<uint64_t>("Req_send_to_Mem", "0");
 }
 
-void logicLayer::finish() 
+void logicLayer::finish()
 {
     dbg.debug(_INFO_, "Logic Layer %d completed %lu ops\n", llID, memOpsProcessed->getCollectionCount());
     //Print Statistics
@@ -179,7 +170,7 @@ void logicLayer::finish()
         printStatsForMacSim();
 }
 
-bool logicLayer::clock(Cycle_t currentCycle) 
+bool logicLayer::clock(Cycle_t currentCycle)
 {
     SST::Event* ev = NULL;
 
@@ -221,10 +212,10 @@ bool logicLayer::clock(Cycle_t currentCycle)
                 outChans[sendID]->send(event);
                 dbg.debug(_L4_, "LogicLayer%d sends %p to vault%u @ %" PRIu64 "\n", llID, (void*)event->getAddr(), sendID, currentCycle);
             }
-        } 
+        }
         // This event is not for this LogicLayer
         else {
-            if (NULL == toMem) 
+            if (NULL == toMem)
                 dbg.fatal(CALL_INFO, -1, "LogicLayer%d not sure what to do with %p...\n", llID, event);
             toMem->send(event);
             reqUsedToMem[1]->addData(1);
@@ -240,10 +231,10 @@ bool logicLayer::clock(Cycle_t currentCycle)
         while ( currentLimitReqBudgetMem[0] && (ev = toMem->recv()) ) {
             MemEvent *event  = dynamic_cast<MemEvent*>(ev);
             if (NULL == event)
-                dbg.fatal(CALL_INFO, -1, "LogicLayer%d got bad event from another LogicLayer\n", llID); 
+                dbg.fatal(CALL_INFO, -1, "LogicLayer%d got bad event from another LogicLayer\n", llID);
 
             reqUsedToMem[0]->addData(1);
-    
+
             toCPU->send(event);
             currentLimitReqBudgetMem[0]--;
             currentLimitReqBudgetCPU[1]--;
@@ -268,7 +259,7 @@ bool logicLayer::clock(Cycle_t currentCycle)
             toCPU->send(event);
             reqUsedToCpu[1]->addData(1);
             dbg.debug(_L4_, "LogicLayer%d got event %p from vault %u @%" PRIu64 ", sent towards cpu\n", llID, (void*)event->getAddr(), j, currentCycle);
-        }    
+        }
     }
 
     // 4)
@@ -296,7 +287,7 @@ bool logicLayer::clock(Cycle_t currentCycle)
          currentLimitWindowNum, currentCycle);
     }
 
-    // 
+    //
     currentLimitWindowNum--;
     if (currentLimitWindowNum == 0) {
         currentLimitReqBudgetCPU[0] = reqLimitPerWindow;
@@ -316,7 +307,7 @@ bool logicLayer::clock(Cycle_t currentCycle)
  * libVaultSimGen Functions
  */
 
-extern "C" Component* create_logicLayer( SST::ComponentId_t id,  SST::Params& params ) 
+extern "C" Component* create_logicLayer( SST::ComponentId_t id,  SST::Params& params )
 {
     return new logicLayer( id, params );
 }
@@ -328,7 +319,7 @@ extern "C" Component* create_logicLayer( SST::ComponentId_t id,  SST::Params& pa
 
 
 // Determine if we 'own' a given address
-bool logicLayer::isOurs(unsigned int addr) 
+bool logicLayer::isOurs(unsigned int addr)
 {
         return ((((addr >> LL_SHIFT) & LL_MASK) == llID) || (LL_MASK == 0));
 }
@@ -358,4 +349,3 @@ void logicLayer::printStatsForMacSim() {
     ofs << "\n";
     writeTo(ofs, suffix, string("total_HMC_candidate_ops"),   HMCCandidateProcessed->getCollectionCount());
 }
-

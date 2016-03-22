@@ -36,7 +36,7 @@ const char *memEventList[] = {
 // ------------------------------------------------------- Logiclayer -------------------------------------------------------------//
 static const ElementInfoPort logicLayer_ports[] = {
   {"bus_%(vaults/quad)d", "Link to the individual memory vaults/quad. Bus ID Should match ID of Quad", memEventList},
-  {"toCPU", "Connection towards the processor (directly to the processor, or down the chain in the direction of the processor)", memEventList},    
+  {"toCPU", "Connection towards the processor (directly to the processor, or down the chain in the direction of the processor)", memEventList},
   {"toMem", "If 'terminal' is 0 (i.e. this is not the last cube in the chain) then this port connects to the next cube.", memEventList},
   {"toXBar_%(quad)d", "Link to Quad XBar shared between Quads", memEventList},
   {NULL, NULL, NULL}
@@ -101,33 +101,36 @@ static const ElementInfoParam quad_params[] = {
 
 // ------------------------------------------------------- VaultSimC -------------------------------------------------------------//
 static const ElementInfoParam VaultSimC_params[] = {
-  {"clock",                           "Vault Clock Rate.", "1.0 Ghz"},
-  {"cacheLineSize",                   "Optional, used to strip address bits for DRAMSim2", "64"},
-  {"debug",                           "VaultSimC debug: 0 (default): No debugging, 1: STDOUT, 2: STDERR, 3: FILE.", "0"},
-  {"debug_level",                     "VaultSimC debug verbosity level (0-10)"},
-  {"statistics_format",               "Optional, Stats format. Options: 0[default], 1[MacSim]", "0"},
-  {"num_bit_shift_address_dram",      "Number of bits that address is shifted before sending to to DRAMSim. Must be set larger than 0 if using multiple vault/quad.", 0},
-  {"vault.id",                        "Unique ID number of Vault", NULL},
-  {"vault.device_ini",                "Name of DRAMSim Device configuration file", NULL},
-  {"vault.debug",                     "Vault debug: 0 (default): No debugging, 1: STDOUT, 2: STDERR, 3: FILE.", 0},
-  {"vault.debug_level",               "Vault debug verbosity level (0-10)", 0},
-  {"vault.debug_OnFlyHmcOps",         "Vault debugging for hmc queue"},
-  {"vault.debug_OnFlyHmcOpsThresh",   "Vault debugging for hmc queue threshold value"},
-  {"vault.system_ini",                "Name of DRAMSim System configuration file", NULL},
-  {"vault.pwd",                       "Path of DRAMSim input files (ignored if file name is an absolute path)", NULL},
-  {"vault.logfile",                   "DRAMSim output path", NULL},
-  {"vault.mem_size",                  "Size of total physical memory in MB", "0"},
-  {"vault.statistics_format",         "Optional, Stats format. Options: 0[default], 1[MacSim]", "0"},
-  {"vault.num_dram_banks_per_rank",   "Number of Banks per Rank in a single DRAM module, should follow ini files. numChannel should be 1.", NULL},
-  {"vault.HMCCost_LogicalOps",        "Compute Cost of Logical Ops in Vault's cycles", "0"},
-  {"vault.HMCCost_CASOps",            "Compute Cost of CAS Ops in Vault's cycles", "0"},
-  {"vault.HMCCost_CompOps",           "Compute Cost of Compare Ops in Vault's cycles", "0"},
-  {"vault.HMCCost_Add8",              "Compute Cost of Add 8b Ops in Vault's cycles", "0"},
-  {"vault.HMCCost_Add16",             "Compute Cost of Add 16b Ops in Vault's cycles", "0"},
-  {"vault.HMCCost_AddDual",           "Compute Cost of Add Dual Ops in Vault's cycles", "0"},
-  {"vault.HMCCost_FPAdd",             "Compute Cost of FP Add in Vault's cycles", "0"},
-  {"vault.HMCCost_Swap",              "Compute Cost of Swap Op in Vault's cycles", "0"},
-  {"vault.HMCCost_BitW",              "Compute Cost of Bit W Op in Vault's cycles", "0"},
+  {"clock",                                 "Vault Clock Rate.", "1.0 Ghz"},
+  {"cacheLineSize",                         "Optional, used to strip address bits for DRAMSim2", "64"},
+  {"debug",                                 "VaultSimC debug: 0 (default): No debugging, 1: STDOUT, 2: STDERR, 3: FILE.", "0"},
+  {"debug_level",                           "VaultSimC debug verbosity level (0-10)"},
+  {"statistics_format",                     "Optional, Stats format. Options: 0[default], 1[MacSim]", "0"},
+  {"num_bit_shift_address_dram",            "Number of bits that address is shifted before sending to to DRAMSim. Must be set larger than 0 if using multiple vault/quad.", 0},
+  {"vault.id",                              "Unique ID number of Vault", NULL},
+  {"vault.device_ini",                      "Name of DRAMSim Device configuration file", NULL},
+  {"vault.onFlyHmcOps_LimitPerWindow",      "Number of on Fly HMC operations which can be processed per window (in cycles)", "8"},
+  {"vault.onFlyHmcOps_LimitWindowSize",     "Number of window size in cycles for limiting number of on Fly HMC operations", "1"},
+  {"vault.numDramBanksPerRank"              "Number of DRAMSim banks per Rank, use for HMC op bank locking", "1"},
+  {"vault.debug",                           "Vault debug: 0 (default): No debugging, 1: STDOUT, 2: STDERR, 3: FILE.", 0},
+  {"vault.debug_level",                     "Vault debug verbosity level (0-10)", 0},
+  {"vault.debug_OnFlyHmcOps",               "Vault debugging for hmc queue"},
+  {"vault.debug_OnFlyHmcOpsThresh",         "Vault debugging for hmc queue threshold value"},
+  {"vault.system_ini",                      "Name of DRAMSim System configuration file", NULL},
+  {"vault.pwd",                             "Path of DRAMSim input files (ignored if file name is an absolute path)", NULL},
+  {"vault.logfile",                         "DRAMSim output path", NULL},
+  {"vault.mem_size",                        "Size of total physical memory in MB", "0"},
+  {"vault.statistics_format",               "Optional, Stats format. Options: 0[default], 1[MacSim]", "0"},
+  {"vault.num_dram_banks_per_rank",         "Number of Banks per Rank in a single DRAM module, should follow ini files. numChannel should be 1.", NULL},
+  {"vault.HMCCost_LogicalOps",              "Compute Cost of Logical Ops in Vault's cycles", "0"},
+  {"vault.HMCCost_CASOps",                  "Compute Cost of CAS Ops in Vault's cycles", "0"},
+  {"vault.HMCCost_CompOps",                 "Compute Cost of Compare Ops in Vault's cycles", "0"},
+  {"vault.HMCCost_Add8",                    "Compute Cost of Add 8b Ops in Vault's cycles", "0"},
+  {"vault.HMCCost_Add16",                   "Compute Cost of Add 16b Ops in Vault's cycles", "0"},
+  {"vault.HMCCost_AddDual",                 "Compute Cost of Add Dual Ops in Vault's cycles", "0"},
+  {"vault.HMCCost_FPAdd",                   "Compute Cost of FP Add in Vault's cycles", "0"},
+  {"vault.HMCCost_Swap",                    "Compute Cost of Swap Op in Vault's cycles", "0"},
+  {"vault.HMCCost_BitW",                    "Compute Cost of Bit W Op in Vault's cycles", "0"},
   { NULL, NULL }
 };
 
@@ -181,6 +184,8 @@ static SubComponent* create_Vault(Component* comp, Params& params) {
 static const ElementInfoParam Vault_params[] = {
     {"id",                          "Unique ID number of Vault", NULL},
     {"device_ini",                  "Name of DRAMSim Device configuration file", NULL},
+    {"onFlyHmcOps_LimitPerWindow",  "Number of on Fly HMC operations which can be processed per window (in cycles)", "8"},
+    {"onFlyHmcOps_LimitWindowSize", "Number of window size in cycles for limiting number of on Fly HMC operations", "1"},
     {"debug",                       "Vault debug: 0 (default): No debugging, 1: STDOUT, 2: STDERR, 3: FILE.", 0},
     {"debug_level",                 "Vault debug verbosity level (0-10)", 0},
     {"debug_OnFlyHmcOps",           "Vault debugging for hmc queue"},
@@ -221,7 +226,7 @@ static const ElementInfoStatistic Vault_statistics[] = {
 // ------------------------------------------------------- Subcomponents -------------------------------------------------------------//
 
 static const ElementInfoSubComponent subcomponents[] = {
-    {   
+    {
         "Vault",                          /*!< Name of the subcomponent. */
         "DRAMSim-based Vault timings",    /*!< Brief description of the subcomponent. */
         NULL,                             /*!< Pointer to a function that will print additional documentation (optional) */
@@ -243,7 +248,7 @@ extern "C" {
     NULL,                                 /*!< List of Introspectors provided by the library. */
     NULL,                                 /*!< List of Modules provided by the library. */
     subcomponents,                        /*!< List of SubComponents provided by the library. */
-    NULL,                                 /*!< List of Partitioners provided by the library. */ 
+    NULL,                                 /*!< List of Partitioners provided by the library. */
     NULL,                                 /*!< Pointer to Function to generate a Python Module for use in Configurations */
     NULL                                  /*!< List of Generators provided by the library. */
   };
