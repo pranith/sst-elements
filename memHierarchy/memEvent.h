@@ -178,6 +178,12 @@ public:
         return me;
     }
 
+    MemEvent* makeInvResponse(State state) {
+        MemEvent *me      = new MemEvent(*this);
+        me->setGrantedState(state);
+        return me;
+    }
+
     /** Generate a new MemEvent, pre-populated as a response */
     MemEvent* makeResponse() {
         MemEvent *me      = new MemEvent(*this);
@@ -390,6 +396,7 @@ public:
     bool isCPURequest(void) const { return MemEvent::isCPURequest(cmd_); }
     /** Returns true if this is of response type */
     static bool isResponse(Command cmd) { return (cmd == GetSResp || cmd == GetXResp);}
+    static bool isInvalidation(Command cmd) { return (cmd == Inv || cmd == FetchInv);}
     bool isResponse(void) const { return MemEvent::isResponse(cmd_); }
     /** Returns true if this is a 'writeback' command type */
     static bool isWriteback(Command cmd) { return (cmd == PutM || cmd == PutE || cmd == PutX || cmd == PutXE || cmd == PutS); }

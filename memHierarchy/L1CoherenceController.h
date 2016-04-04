@@ -62,6 +62,7 @@ public:
     /** Send response up (to processor) */
     uint64_t sendResponseUp(MemEvent * event, State grantedState, vector<uint8_t>* data, bool replay, uint64_t baseTime, bool atomic = false);
 
+    void sendInvalidationCpu(MemEvent *event, CacheLine *cacheLine);
 /* Miscellaneous */
     /** Determine whether a retry of a NACKed event is needed */
     bool isRetryNeeded(MemEvent * event, CacheLine * cacheLine);

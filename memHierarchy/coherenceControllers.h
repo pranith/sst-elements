@@ -110,6 +110,7 @@ public:
 #endif
     }
 
+    virtual void sendInvalidationCpu(MemEvent *event, CacheLine *cache) {}
 
     // Non-L1s can inherit this version, L1s should implement a different version to split out the requested block
     virtual uint64_t sendResponseUp(MemEvent * event, State grantedState, vector<uint8_t>* data, bool replay, uint64_t baseTime, bool atomic=false) {

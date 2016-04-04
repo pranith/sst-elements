@@ -137,11 +137,13 @@ CacheAction L1CoherenceController::handleInvalidationRequest(MemEvent * event, C
     Command cmd = event->getCmd();
     switch (cmd) {
         case Inv: 
-            return handleInv(event, cacheLine, replay);
+            sendInvalidationCpu(event, cacheLine);
+	    return handleInv(event, cacheLine, replay);
         case Fetch:
             return handleFetch(event, cacheLine, replay);
         case FetchInv:
-            return handleFetchInv(event, cacheLine, replay);
+            //sendInvalidationCpu(event, cacheLine);
+	    return handleFetchInv(event, cacheLine, replay);
         case FetchInvX:
             return handleFetchInvX(event, cacheLine, replay);
         default:
@@ -555,6 +557,12 @@ void L1CoherenceController::sendResponseDown(MemEvent* event, CacheLine* cacheLi
 #endif
 }
 
+void L1CoherenceController::sendInvalidationCpu(MemEvent *event, CacheLine *cache)
+{
+    MemEvent *invEvent = event->makeInvResponse(I);
+    Response resp = {invEvent, cache->getTimestamp(), false};
+    addToOutgoingQueueUp(resp);
+}
 
 uint64_t L1CoherenceController::sendResponseUp(MemEvent * event, State grantedState, std::vector<uint8_t>* data, bool replay, uint64_t baseTime, bool finishedAtomically) {
     Command cmd = event->getCmd();
