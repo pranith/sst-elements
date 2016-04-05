@@ -142,7 +142,7 @@ CacheAction L1CoherenceController::handleInvalidationRequest(MemEvent * event, C
         case Fetch:
             return handleFetch(event, cacheLine, replay);
         case FetchInv:
-            //sendInvalidationCpu(event, cacheLine);
+            sendInvalidationCpu(event, cacheLine);
 	    return handleFetchInv(event, cacheLine, replay);
         case FetchInvX:
             return handleFetchInvX(event, cacheLine, replay);
