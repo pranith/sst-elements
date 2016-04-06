@@ -61,6 +61,7 @@ public:
 /* Message send */
     /** Forward a message up, used for non-inclusive caches */
     void forwardMessageUp(MemEvent * event);
+    void forwardPermissionMessage(MemEvent * event);
 
 /* Miscellaneous */
     /** Determine in advance if a request will miss (and what kind of miss). Used for stats */

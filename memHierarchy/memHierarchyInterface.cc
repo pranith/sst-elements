@@ -131,6 +131,8 @@ SimpleMem::Request* MemHierarchyInterface::processIncoming(MemEvent *_ev){
     else if (MemEvent::isInvalidation(cmd)) {
         req = new SimpleMem::Request(SimpleMem::Request::Invalidate, _ev->getAddr(), _ev->getSize());
         //updateRequest(req, _ev);
+    } else if (MemEvent::isResponse(cmd)) {
+        req = new SimpleMem::Request(SimpleMem::Request::Permission, _ev->getAddr(), _ev->getSize());
     }
     else{
         fprintf(stderr, "Unable to find matching request.  Cmd = %s, Addr = %" PRIx64 ", respID = %" PRIx64 "\n", CommandString[_ev->getCmd()], _ev->getAddr(), _ev->getResponseToID().first); //TODO

@@ -241,7 +241,9 @@ void Cache::processCacheResponse(MemEvent* responseEvent, Addr baseAddr) {
     printLine(baseAddr);
 #endif
 
-    MemEvent* origRequest = getOrigReq(mshr_->lookup(baseAddr));
+    auto vec = mshr_->lookup(baseAddr);
+    MemEvent* origRequest = NULL;
+    if (vec.size()) origRequest = getOrigReq(mshr_->lookup(baseAddr));
     CacheLine * line = getLine(baseAddr);
     CacheAction action = coherenceMgr->handleResponse(responseEvent, line, origRequest);
 

@@ -161,7 +161,12 @@ CacheAction L1CoherenceController::handleResponse(MemEvent * respEvent, CacheLin
     switch (cmd) {
         case GetSResp:
         case GetXResp:
-            handleDataResponse(respEvent, cacheLine, reqEvent);
+            if (respEvent->getGrantedState() == I) {
+                sendInvalidationCpu(respEvent, cacheLine);
+                return STALL;
+            } else {
+                handleDataResponse(respEvent, cacheLine, reqEvent);
+            }
             break;
         case AckPut:
             recordStateEventCount(respEvent->getCmd(), I);
@@ -560,7 +565,7 @@ void L1CoherenceController::sendResponseDown(MemEvent* event, CacheLine* cacheLi
 void L1CoherenceController::sendInvalidationCpu(MemEvent *event, CacheLine *cache)
 {
     MemEvent *invEvent = event->makeInvResponse(I);
-    Response resp = {invEvent, cache->getTimestamp(), false};
+    Response resp = {invEvent, timestamp_, false};
     addToOutgoingQueueUp(resp);
 }
 

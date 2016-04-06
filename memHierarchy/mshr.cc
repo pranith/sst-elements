@@ -153,9 +153,11 @@ bool MSHR::pendingWriteback(Addr baseAddr) {
     return (itv != res.end());
 }
 
+static vector<mshrType> dummy;
 const vector<mshrType> MSHR::lookup(Addr baseAddr) {
     mshrTable::iterator it = map_.find(baseAddr);
     if (it == map_.end()) {
+        return dummy;
         d2_->fatal(CALL_INFO,-1, "%s (MSHR), Error: mshr did not find entry with address 0x%" PRIx64 "\n", ownerName_.c_str(), baseAddr);
     }
     vector<mshrType> res = (it->second).mshrQueue;
@@ -352,6 +354,7 @@ vector<mshrType> MSHR::removeAll(Addr baseAddr) {
 MemEvent* MSHR::removeFront(Addr baseAddr) {
     mshrTable::iterator it = map_.find(baseAddr);
     if (it == map_.end()) {
+        return NULL;
         d2_->fatal(CALL_INFO,-1, "%s (MSHR), Error: mshr did not find entry with address 0x%" PRIx64 "\n", ownerName_.c_str(), baseAddr);
     }
     //if (it->second.empty()) {

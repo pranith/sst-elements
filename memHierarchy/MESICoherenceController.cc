@@ -422,6 +422,8 @@ CacheAction MESIController::handleGetXRequest(MemEvent* event, CacheLine* cacheL
     
     switch (state) {
         case I:
+            // accessing invalid block: send permission grant message to cpu
+            forwardPermissionMessage(event);
             notifyListenerOfAccess(event, NotifyAccessType::WRITE, NotifyResultType::MISS);
             sendTime = forwardMessage(event, cacheLine->getBaseAddr(), cacheLine->getSize(), 0, NULL);
             cacheLine->setState(IM);
@@ -1320,6 +1322,17 @@ void MESIController::sendFetchInvX(CacheLine * cacheLine, string rqstr, bool rep
 #endif
 }
 
+void MESIController::forwardPermissionMessage(MemEvent* event)
+{
+    std::vector<uint8_t> dataVec;
+    MemEvent * forwardEvent = new MemEvent((Component*)owner_, event->getAddr(), event->getBaseAddr(), GetXResp, dataVec);
+    forwardEvent->setDst(event->getSrc());
+    forwardEvent->setRqstr("cpu");
+    forwardEvent->setGrantedState(I);
+    uint64_t deliveryTime = timestamp_ + tagLatency_;
+    Response fwdReq = {forwardEvent, deliveryTime, false};
+    addToOutgoingQueueUp(fwdReq);
+}
 
 /**
  *  Forward message to an upper level cache.
